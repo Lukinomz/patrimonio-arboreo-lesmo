@@ -1,0 +1,11 @@
+.driveCard { margin-bottom: 16px; }
+body #viewArchivio > .workCard.driveCard { display: block !important; }
+.driveCard .field { max-width: 720px; }
+.driveCard input[type="url"], .driveCard input[type="password"] { width: 100%; }
+.driveCheck { display: flex; align-items: center; gap: 8px; margin: 14px 0; font-size: 13px; }
+.driveCard .archiveBtns { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.driveCard button:disabled { opacity: .5; cursor: default; }
+.driveCard #driveFeedback, .driveCard .error { color: #a23323; white-space: pre-wrap; }
+#openDrive { margin: 8px 16px; align-self: flex-start; }
+.driveConnected #openDrive, .driveConnected #mArchiveTools, .driveConnected #viewArchivio > .archiveCards,
+.driveConnected #viewArchivio > .workCard:not(.driveCard), .driveConnected #viewArchivio > .v2Introduction { display: none; }

@@ -1,16 +1,17 @@
 # Collegare la cartella Google Drive
 
-L’app pubblicata su GitHub Pages può leggere e scrivere l’archivio condiviso usando una Web App Google Apps Script. Il proprietario autorizza il servizio sul proprio account Google una volta; i collaboratori inseriscono nell’app l’indirizzo del servizio e una chiave condivisa. Non è un accesso personale con account Google: chi possiede **indirizzo e chiave** può leggere e modificare tutto l’archivio. La password Admin locale dell’app non protegge il servizio Drive.
+L’app pubblicata su GitHub Pages può leggere e scrivere l’archivio condiviso usando una Web App Google Apps Script. Il proprietario autorizza il servizio sul proprio account Google una volta; i collaboratori possono aprire un **link di accesso riservato** che collega automaticamente la cartella. Non è un accesso personale con account Google: chi possiede **il link, oppure indirizzo e chiave**, può leggere e modificare tutto l’archivio. La password Admin locale dell’app non protegge il servizio Drive.
 
 ## Prima attivazione (proprietario della cartella)
 
 1. Crea o scegli una **cartella dedicata** in Google Drive. Conserva l’ID: è la parte dopo `/folders/` nel suo link. Per usare un archivio esistente, nella cartella devono esserci `alberi.json` e la cartella `Foto/` originale, senza nomi duplicati. Non rendere pubblica la cartella: il servizio opera con i permessi del proprietario.
-2. Apri <https://script.google.com/home/start>, crea un progetto e copia il contenuto di [Code.gs](Code.gs) nell’editor. Non mettere ID o chiavi dentro al codice GitHub.
+2. Apri <https://script.google.com/home/start>, crea un progetto e sostituisci **tutto** il contenuto predefinito di `Codice.gs` con [Code.gs](Code.gs). Il codice non va inserito dentro `myFunction()`. Salva il file. Non mettere ID o chiavi dentro al codice GitHub.
 3. In **Impostazioni progetto → Proprietà script**, aggiungi:
    - `DRIVE_FOLDER_ID`: l’ID della cartella dedicata.
-   - `ACCESS_KEY`: una chiave casuale di almeno 32 caratteri, generata da un gestore password (consigliati 48 o più). Non usare una password personale. Conservala e condividila privatamente con i soli collaboratori. Non inviarla in chat.
+   - `ACCESS_KEY`: una chiave casuale di almeno 32 caratteri. L’app offre il pulsante **Genera e copia una nuova chiave** nella sezione Archivio → Google Drive: incolla quanto copiato nel campo **Valore** della proprietà `ACCESS_KEY`. Il pulsante genera la chiave nel browser, senza cambiarla automaticamente sul servizio Google. In alternativa usa un gestore password. Non usare una password personale. Conservala privatamente.
 4. Scegli **Distribuisci → Nuova distribuzione → App web**. Imposta **Esegui come: Me** e **Chi può accedere: Chiunque**. Autorizza l’accesso a Drive e copia l’URL che termina con `/exec`. Il codice controlla la chiave sul server prima di accedere ai file. Se l’organizzazione impedisce le Web App accessibili a chiunque, questa modalità richiede una modifica dell’amministratore o una diversa integrazione con accesso Google personale.
 5. Apri l’app Lesmo → **Archivio → Google Drive**, incolla URL e chiave, poi **Collega Google Drive**. Se la cartella è nuova, seleziona **Crea archivio se la cartella è vuota**. La creazione non sovrascrive un archivio comparso nel frattempo.
+6. Dopo il collegamento premi **Copia link di accesso per i collaboratori**. Invia privatamente il link solo a chi deve leggere e modificare l’archivio. Aprendolo, la connessione avviene automaticamente: non occorre digitare la chiave.
 
 Apps Script può mostrare l’avviso di applicazione non verificata per il progetto personale. Autorizza soltanto il progetto che hai creato e il codice che hai controllato; la richiesta di permesso Drive è per il proprietario. L’ID della cartella limita i file usati dal codice, ma il permesso Google del servizio riguarda Drive: usa un account dedicato se vuoi separarlo dai documenti personali.
 
@@ -26,7 +27,8 @@ Il collegamento apre i dati di Drive: non carica automaticamente quelli del PC o
 
 ## Uso quotidiano e protezione dei dati
 
-- Ogni collaboratore usa lo stesso URL e la stessa chiave. La chiave resta solo in memoria nella pagina; dopo una ricarica va reinserita. L’app ricorda solo l’URL, senza parametri o credenziali.
+- Ogni collaboratore può conservare il link riservato e riaprirlo per collegarsi. Il link contiene la chiave nel frammento dopo `#`, che il browser non invia ai server HTTP. All’apertura l’app rimuove il frammento dall’indirizzo corrente e mantiene la chiave in memoria, senza salvarla nella memoria persistente dell’app. Il link completo resta comunque una credenziale: conservalo privatamente e considera anche le copie negli appunti, nei messaggi e nei preferiti.
+- Una ricarica normale della pagina richiede la chiave; riaprire il link riservato riconnette automaticamente. L’app ricorda solo l’URL del servizio, senza credenziali.
 - Quando Drive è collegato, schede, rilievi e fotografie vengono scritti nella cartella condivisa, anche dal telefono. La modalità locale precedente resta disponibile dopo **Scollega**.
 - Per vedere gli aggiornamenti altrui, usa **Ricollega / aggiorna**. Non c’è aggiornamento in tempo reale e non c’è salvataggio offline su Drive.
 - Se due persone partono dalla stessa versione, il primo salvataggio riesce. Il secondo viene rifiutato: **nessuna fusione automatica**. Scarica la **copia da recuperare**, ricollega e ripeti le modifiche sulla versione aggiornata. Se non riesci a scaricare la copia, non chiudere la pagina: conserva manualmente le modifiche necessarie. Non importare l’intera copia vecchia sopra l’archivio nuovo per risolvere il conflitto.

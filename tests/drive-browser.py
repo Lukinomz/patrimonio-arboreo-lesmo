@@ -7,6 +7,7 @@ import pathlib
 import subprocess
 import threading
 import urllib.request
+import urllib.parse
 
 from playwright.sync_api import sync_playwright
 
@@ -32,8 +33,9 @@ def main():
             browser = p.chromium.launch(executable_path="/usr/bin/chromium", headless=True, args=["--no-sandbox"])
             errors = []
 
-            def new_page(mobile=False):
+            def new_page(mobile=False, access_fragment=None):
                 context = browser.new_context(viewport={"width": 390, "height": 844} if mobile else {"width": 1280, "height": 900})
+                context.add_init_script("Object.defineProperty(navigator, 'clipboard', {value: {writeText: async text => { window.testCopiedText = text; }}})")
 
                 def bridge(route):
                     if route.request.url == ENDPOINT:
@@ -51,10 +53,13 @@ def main():
                 page = context.new_page()
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.on("dialog", lambda dialog: dialog.accept())
-                assert page.goto(url + ("/?mobile=1" if mobile else "/")).status == 200
+                assert page.goto(url + ("/?mobile=1" if mobile else "/") + (access_fragment or "")).status == 200
                 if mobile:
                     page.wait_for_function("mArchiveReady")
-                page.locator("#openDrive").click()
+                if access_fragment:
+                    page.wait_for_function("document.body.classList.contains('driveConnected') || document.getElementById('driveFeedback').textContent.length > 0")
+                else:
+                    page.locator("#openDrive").click()
                 return page
 
             def connect(page, create=False, key=KEY):
@@ -64,6 +69,12 @@ def main():
                 page.locator("#driveConnect").click()
 
             desktop = new_page()
+            desktop.locator("#driveGenerate").click()
+            generated_key = desktop.locator("#driveKey").input_value()
+            assert len(generated_key) == 32
+            assert desktop.evaluate("window.testCopiedText") == generated_key
+            assert generated_key not in desktop.evaluate("JSON.stringify(localStorage)")
+            print("PASS: generazione e copia di una chiave da 32 caratteri senza persistenza")
             connect(desktop, key="incorrect-key-at-least-thirty-two-characters")
             desktop.wait_for_function("document.getElementById('driveFeedback').textContent.includes('Chiave')")
             assert desktop.evaluate("folderHandle === null")
@@ -94,6 +105,25 @@ def main():
             assert "Google Drive" in mobile.locator("#workFolderReminder").inner_text()
             assert mobile.locator("#mArchiveTools").is_hidden()
             print("PASS: scheda e foto scritte da desktop e lette da telefono")
+
+            desktop.evaluate("switchSection('archivio')")
+            desktop.locator("#driveShare").click()
+            access_link = desktop.evaluate("window.testCopiedText")
+            fragment = urllib.parse.urlsplit(access_link).fragment
+            shared = new_page(mobile=True, access_fragment="#" + fragment)
+            assert shared.evaluate("trees[0].code") == "DRIVE-TEST-1"
+            assert shared.evaluate("location.hash") == ""
+            assert KEY not in shared.url
+            assert KEY not in shared.evaluate("JSON.stringify(localStorage)")
+            shared.close()
+            invalid_fragment = "#" + urllib.parse.urlencode({"drive": "https://example.invalid/exec", "key": KEY})
+            invalid = new_page(access_fragment=invalid_fragment)
+            assert not invalid.evaluate("document.body.classList.contains('driveConnected')")
+            assert "script.google.com" not in invalid.url
+            assert invalid.evaluate("location.hash") == ""
+            assert invalid.locator("#driveFeedback").inner_text()
+            invalid.close()
+            print("PASS: link riservato collega automaticamente, rimuove la chiave dall’indirizzo e rifiuta servizi estranei")
 
             desktop.evaluate("v2OpenAnag(trees[0])")
             desktop.locator("#v2AnaAddress").fill("Via aggiornata dal primo utente")

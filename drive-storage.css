@@ -1,6 +1,7 @@
 .driveCard { margin-bottom: 16px; }
 body #viewArchivio > .workCard.driveCard { display: block !important; }
 .driveCard .field { max-width: 720px; }
+.driveCard .driveHelp { max-width: 720px; color: #667b70; font-size: 12px; line-height: 1.5; }
 .driveCard input[type="url"], .driveCard input[type="password"] { width: 100%; }
 .driveCheck { display: flex; align-items: center; gap: 8px; margin: 14px 0; font-size: 13px; }
 .driveCard .archiveBtns { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }

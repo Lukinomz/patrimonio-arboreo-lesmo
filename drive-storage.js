@@ -8,6 +8,7 @@
   };
   let active = null, connecting = false, busy = 0, blocked = '', statusMode = 'ready';
   let recoverySnapshot = null;
+  let incomingConnection = null, incomingError = '';
   const bootTasks = [];
   const originalRestore = restoreFolderShortcut;
   restoreFolderShortcut = function(...args) {
@@ -26,6 +27,55 @@
       throw Error('Incolla l’indirizzo della distribuzione Google Apps Script che termina con /exec.');
     }
     return url.href;
+  }
+
+  // Il frammento non viene inviato ai server HTTP. Lo togliamo subito
+  // dall'indirizzo e dalla voce corrente della cronologia.
+  const linkParameters = new URLSearchParams(location.hash.slice(1));
+  if (linkParameters.has('drive')) {
+    const url = linkParameters.get('drive');
+    const key = linkParameters.get('key') || '';
+    history.replaceState(null, '', location.pathname + location.search);
+    try {
+      if (key.length < 32) throw Error('Il link di accesso è incompleto. Chiedi un nuovo link al responsabile.');
+      incomingConnection = {url: endpointURL(url), key};
+    } catch (error) { incomingError = error.message; }
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      const field = document.createElement('textarea');
+      field.value = text;
+      field.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.append(field); field.select();
+      const copied = document.execCommand('copy'); field.remove();
+      if (!copied) throw Error('Il browser ha bloccato la copia. Consenti l’accesso agli appunti e riprova.');
+    }
+  }
+
+  async function generateKey() {
+    const feedback = byId('driveFeedback');
+    if (byId('driveKey').value && !confirm('Generare una nuova chiave? Se il servizio Google è già configurato, dovrai aggiornare anche il valore ACCESS_KEY nelle proprietà script.')) return;
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    const key = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    byId('driveKey').value = key;
+    try {
+      await copyText(key);
+      feedback.textContent = 'Chiave generata e copiata. Incollala nel campo Valore della proprietà ACCESS_KEY su Google Apps Script, poi salva.';
+    } catch (error) { feedback.textContent = error.message; }
+  }
+
+  async function shareConnection() {
+    if (!active) return;
+    const link = new URL(location.origin + location.pathname);
+    link.searchParams.set('v', 'drive2');
+    link.hash = new URLSearchParams({drive: active.url, key: active.key}).toString();
+    try {
+      await copyText(link.href);
+      byId('driveFeedback').textContent = 'Link di accesso copiato. Chi lo riceve può leggere e modificare l’archivio: invialo solo ai collaboratori autorizzati.';
+    } catch (error) { byId('driveFeedback').textContent = error.message; }
   }
 
   async function call(config, action, payload = {}) {
@@ -69,6 +119,8 @@
     byId('driveReload').disabled = !active || !!busy;
     byId('driveRecovery').disabled = !active || !!busy;
     byId('driveImport').disabled = !active || !!busy || !!blocked;
+    byId('driveGenerate').disabled = connecting || !!active;
+    byId('driveShare').disabled = !active || !!busy;
     for (const id of ['driveURL', 'driveKey', 'driveCreate']) byId(id).disabled = connecting || !!active;
     for (const id of localButtons) if (byId(id)) byId(id).disabled = !!active || connecting;
     const text = active ? blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + active.name + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Non collegato. L’archivio attuale resta locale finché non colleghi Drive.';
@@ -206,7 +258,7 @@
     try {
       config = {url: endpointURL(byId('driveURL').value.trim()), key: byId('driveKey').value.trim()};
       if (config.key.length < 32) throw Error('La chiave deve contenere almeno 32 caratteri.');
-    } catch (error) { feedback.textContent = error.message; return; }
+    } catch (error) { feedback.textContent = error.message; return false; }
     connecting = true; display();
     try {
       await Promise.all(bootTasks); await saveChain;
@@ -226,7 +278,8 @@
       try { localStorage.setItem('LesmoDriveEndpoint', config.url); } catch (_) {}
       byId('driveKey').value = ''; // La chiave resta soltanto nella memoria della sessione.
       refresh(); updateArchiveUI(); tell('Google Drive collegato in lettura e scrittura.');
-    } catch (error) { feedback.textContent = error.message; }
+      return true;
+    } catch (error) { feedback.textContent = error.message; return false; }
     finally { connecting = false; display(); }
   }
 
@@ -238,13 +291,15 @@
       <form id="driveForm">
         <label class="field">Indirizzo del servizio Drive<input type="url" id="driveURL" required placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false"></label>
         <label class="field">Chiave di accesso condivisa<input type="password" id="driveKey" required minlength="32" autocomplete="off"></label>
+        <button class="btn" id="driveGenerate" type="button">Genera e copia una nuova chiave</button>
+        <p class="driveHelp">Solo per la prima configurazione o per cambiare la chiave: il pulsante genera 32 caratteri e li copia, pronti da incollare in ACCESS_KEY su Google Apps Script.</p>
         <label class="driveCheck"><input type="checkbox" id="driveCreate"> Crea archivio se la cartella è vuota</label>
-        <div class="archiveBtns"><button class="btn main" id="driveConnect" type="submit">Collega Google Drive</button><button class="btn" id="driveReload" type="button" disabled>Ricollega / aggiorna</button><button class="btn" id="driveDisconnect" type="button" disabled>Scollega</button><button class="btn" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
+        <div class="archiveBtns"><button class="btn main" id="driveConnect" type="submit">Collega Google Drive</button><button class="btn main" id="driveShare" type="button" disabled>Copia link di accesso per i collaboratori</button><button class="btn" id="driveReload" type="button" disabled>Ricollega / aggiorna</button><button class="btn" id="driveDisconnect" type="button" disabled>Scollega</button><button class="btn" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
         <input id="driveImportFile" type="file" accept=".json,application/json" hidden>
       </form>
       <p id="driveStatus" role="status" aria-live="polite"></p><p id="driveFeedback" role="alert"></p>
-      <p>La chiave consente lettura e scrittura: condividila solo con i collaboratori. Non viene pubblicata né salvata nel browser e va reinserita dopo la ricarica della pagina. Senza rete il salvataggio su Drive non è disponibile.</p>
-      <a href="google-drive/README.md" target="_blank" rel="noopener">Prima configurazione della cartella Drive</a>
+      <p>Il link riservato apre e collega automaticamente l’archivio. Contiene la chiave di accesso: chi lo possiede può leggere e modificare i dati. Condividilo privatamente e conservalo per riaprire l’app. L’app ricorda solo l’indirizzo del servizio; senza il link, dopo una ricarica devi reinserire la chiave. Senza rete il salvataggio su Drive non è disponibile.</p>
+      <a href="https://github.com/Lukinomz/patrimonio-arboreo-lesmo/blob/main/google-drive/README.md" target="_blank" rel="noopener">Prima configurazione della cartella Drive</a>
     `;
     byId('viewArchivio').prepend(section);
     const introduction = byId('viewArchivio').querySelector('.v2Introduction');
@@ -253,6 +308,8 @@
     open.onclick = () => { switchSection('archivio'); section.scrollIntoView({block: 'start', behavior: 'smooth'}); byId('driveURL').focus(); };
     byId('workFolderReminder').insertAdjacentElement('afterend', open);
     byId('driveForm').onsubmit = connect;
+    byId('driveGenerate').onclick = generateKey;
+    byId('driveShare').onclick = shareConnection;
     try { byId('driveURL').value = localStorage.getItem('LesmoDriveEndpoint') || ''; } catch (_) {}
     const leave = () => {
       if (busy) return;
@@ -266,5 +323,16 @@
     byId('driveImportFile').onchange = event => { const file = event.target.files[0]; event.target.value = ''; if (file) importDrive(file); };
     window.addEventListener('beforeunload', event => { if (busy || blocked) { event.preventDefault(); event.returnValue = ''; } });
     display();
+    if (incomingConnection) {
+      byId('driveURL').value = incomingConnection.url;
+      byId('driveKey').value = incomingConnection.key;
+      incomingConnection = null;
+      connect({preventDefault() {}}).then(connected => {
+        if (!connected) switchSection('archivio');
+      });
+    } else if (incomingError) {
+      byId('driveFeedback').textContent = incomingError;
+      switchSection('archivio');
+    }
   });
 })();

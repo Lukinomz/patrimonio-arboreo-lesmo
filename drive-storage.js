@@ -1,6 +1,7 @@
 /* Archivio condiviso Google Drive; servizio Apps Script in google-drive/. */
 (() => {
   'use strict';
+  const DEFAULT_DRIVE_URL = 'https://script.google.com/macros/s/AKfycbwrv6aY7vbGae_6wT4JWLkGPHd6zsb7RulCuP_ffWryYuMK0wUqauK7IVO_ZY6qQwPJ/exec';
   const local = {
     save: saveArchive, photo: filePathHandle, writePhoto: writePhotoPath,
     backup: createBackup, importJSON: impJSON, mobileImport: mImportBackup,
@@ -38,7 +39,8 @@
     history.replaceState(null, '', location.pathname + location.search);
     try {
       if (key.length < 32) throw Error('Il link di accesso è incompleto. Chiedi un nuovo link al responsabile.');
-      incomingConnection = {url: endpointURL(url), key};
+      if (endpointURL(url) !== DEFAULT_DRIVE_URL) throw Error('Questo link appartiene a un altro archivio. Usa il normale indirizzo dell’app e la password ricevuta dal responsabile.');
+      incomingConnection = {url: DEFAULT_DRIVE_URL, key};
     } catch (error) { incomingError = error.message; }
   }
 
@@ -70,11 +72,9 @@
   async function shareConnection() {
     if (!active) return;
     const link = new URL(location.origin + location.pathname);
-    link.searchParams.set('v', 'drive2');
-    link.hash = new URLSearchParams({drive: active.url, key: active.key}).toString();
     try {
       await copyText(link.href);
-      byId('driveFeedback').textContent = 'Link di accesso copiato. Chi lo riceve può leggere e modificare l’archivio: invialo solo ai collaboratori autorizzati.';
+      byId('driveFeedback').textContent = 'Link dell’app copiato. È lo stesso per tutti: comunica la password separatamente ai collaboratori autorizzati.';
     } catch (error) { byId('driveFeedback').textContent = error.message; }
   }
 
@@ -94,7 +94,7 @@
         throw Error('Risposta non valida: controlla che la Web App sia distribuita con accesso “Chiunque”.');
       }
       if (!result.ok) {
-        const error = Error(result.error?.message || 'Operazione Drive non riuscita.');
+        const error = Error(result.error?.code === 'UNAUTHORIZED' ? 'Password non corretta.' : result.error?.message || 'Operazione Drive non riuscita.');
         error.code = result.error?.code; throw error;
       }
       if (!result.result || typeof result.result.revision !== 'string' && action !== 'photoGet') throw Error('Risposta Drive incompleta.');
@@ -121,9 +121,10 @@
     byId('driveImport').disabled = !active || !!busy || !!blocked;
     byId('driveGenerate').disabled = connecting || !!active;
     byId('driveShare').disabled = !active || !!busy;
+    byId('driveLocal').disabled = connecting || !!active;
     for (const id of ['driveURL', 'driveKey', 'driveCreate']) byId(id).disabled = connecting || !!active;
     for (const id of localButtons) if (byId(id)) byId(id).disabled = !!active || connecting;
-    const text = active ? blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + active.name + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Non collegato. L’archivio attuale resta locale finché non colleghi Drive.';
+    const text = active ? blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + active.name + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Archivio condiviso già configurato. Inserisci la password ricevuta dal responsabile.';
     byId('driveStatus').textContent = connecting ? 'Collegamento a Google Drive…' : text;
     byId('driveStatus').classList.toggle('error', !!blocked);
     document.body.classList.toggle('driveConnected', !!active);
@@ -250,14 +251,23 @@
     const result = local.dashboard(...args); display(); return result;
   };
 
+  function openApplication() {
+    const gate = byId('driveAccess');
+    if (!gate || gate.hidden) return;
+    byId('viewArchivio').prepend(byId('driveCard'));
+    gate.hidden = true;
+    byId('app').inert = false;
+    document.body.classList.remove('driveLoginRequired');
+  }
+
   async function connect(event) {
     event.preventDefault();
     if (connecting || active) return;
     const feedback = byId('driveFeedback'); feedback.textContent = '';
     let config;
     try {
-      config = {url: endpointURL(byId('driveURL').value.trim()), key: byId('driveKey').value.trim()};
-      if (config.key.length < 32) throw Error('La chiave deve contenere almeno 32 caratteri.');
+      config = {url: DEFAULT_DRIVE_URL, key: byId('driveKey').value.trim()};
+      if (config.key.length < 32) throw Error('Password non valida. Usa quella ricevuta dal responsabile.');
     } catch (error) { feedback.textContent = error.message; return false; }
     connecting = true; display();
     try {
@@ -277,6 +287,7 @@
       folderHandle = {name: 'Google Drive · ' + active.name};
       try { localStorage.setItem('LesmoDriveEndpoint', config.url); } catch (_) {}
       byId('driveKey').value = ''; // La chiave resta soltanto nella memoria della sessione.
+      openApplication();
       refresh(); updateArchiveUI(); tell('Google Drive collegato in lettura e scrittura.');
       return true;
     } catch (error) { feedback.textContent = error.message; return false; }
@@ -286,34 +297,43 @@
   document.addEventListener('DOMContentLoaded', () => {
     const section = document.createElement('section'); section.className = 'workCard driveCard'; section.id = 'driveCard';
     section.innerHTML = `
-      <h2>☁ Archivio condiviso Google Drive</h2>
-      <p>Collega la stessa cartella da PC e telefono. Ogni salvataggio aggiorna Drive. Ricollega per caricare le modifiche delle altre persone; un conflitto blocca la scrittura senza sovrascriverle.</p>
+      <h2 id="driveAccessTitle">Patrimonio Arboreo Lesmo</h2>
+      <p class="driveLoginOnly">Accedi all’archivio condiviso con la password ricevuta dal responsabile. Il collegamento a Google Drive è già impostato.</p>
       <form id="driveForm">
-        <label class="field">Indirizzo del servizio Drive<input type="url" id="driveURL" required placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false"></label>
-        <label class="field">Chiave di accesso condivisa<input type="password" id="driveKey" required minlength="32" autocomplete="off"></label>
-        <button class="btn" id="driveGenerate" type="button">Genera e copia una nuova chiave</button>
-        <p class="driveHelp">Solo per la prima configurazione o per cambiare la chiave: il pulsante genera 32 caratteri e li copia, pronti da incollare in ACCESS_KEY su Google Apps Script.</p>
-        <label class="driveCheck"><input type="checkbox" id="driveCreate"> Crea archivio se la cartella è vuota</label>
-        <div class="archiveBtns"><button class="btn main" id="driveConnect" type="submit">Collega Google Drive</button><button class="btn main" id="driveShare" type="button" disabled>Copia link di accesso per i collaboratori</button><button class="btn" id="driveReload" type="button" disabled>Ricollega / aggiorna</button><button class="btn" id="driveDisconnect" type="button" disabled>Scollega</button><button class="btn" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
+        <input type="hidden" id="driveURL">
+        <label class="field driveLoginOnly">Password di accesso<input type="password" id="driveKey" name="password" required autocomplete="current-password"></label>
+        <div class="archiveBtns"><button class="btn main driveLoginOnly" id="driveConnect" type="submit">Accedi</button><button class="btn driveSessionOnly" id="driveShare" type="button" disabled>Copia link dell’app</button><button class="btn driveSessionOnly" id="driveReload" type="button" disabled>Ricollega / aggiorna</button><button class="btn driveSessionOnly" id="driveDisconnect" type="button" disabled>Esci</button><button class="btn driveSessionOnly" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn driveSessionOnly" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
         <input id="driveImportFile" type="file" accept=".json,application/json" hidden>
+        <details id="driveSetup" class="driveLoginOnly"><summary>Prima configurazione e archivio locale</summary>
+          <p class="driveHelp">Questa sezione serve al responsabile. Per accedere basta la password.</p>
+          <button class="btn" id="driveGenerate" type="button">Genera e copia una nuova chiave</button>
+          <p class="driveHelp">Il pulsante genera una nuova chiave da impostare nel valore ACCESS_KEY su Google Apps Script. Non cambia la password del servizio automaticamente.</p>
+          <label class="driveCheck"><input type="checkbox" id="driveCreate"> Crea archivio se la cartella è vuota</label>
+          <button class="btn" id="driveLocal" type="button">Apri un archivio locale senza Drive</button>
+          <p><a href="https://github.com/Lukinomz/patrimonio-arboreo-lesmo/blob/main/google-drive/README.md" target="_blank" rel="noopener">Istruzioni per il responsabile</a></p>
+        </details>
       </form>
       <p id="driveStatus" role="status" aria-live="polite"></p><p id="driveFeedback" role="alert"></p>
-      <p>Il link riservato apre e collega automaticamente l’archivio. Contiene la chiave di accesso: chi lo possiede può leggere e modificare i dati. Condividilo privatamente e conservalo per riaprire l’app. L’app ricorda solo l’indirizzo del servizio; senza il link, dopo una ricarica devi reinserire la chiave. Senza rete il salvataggio su Drive non è disponibile.</p>
-      <a href="https://github.com/Lukinomz/patrimonio-arboreo-lesmo/blob/main/google-drive/README.md" target="_blank" rel="noopener">Prima configurazione della cartella Drive</a>
+      <p class="driveSessionOnly">Ogni salvataggio aggiorna l’archivio condiviso su Google Drive. La password viene verificata dal servizio Google e resta in memoria per questa pagina. Per vedere le modifiche degli altri, ricollega l’archivio.</p>
     `;
-    byId('viewArchivio').prepend(section);
+    const gate = document.createElement('div'); gate.id = 'driveAccess';
+    gate.setAttribute('role', 'dialog'); gate.setAttribute('aria-modal', 'true'); gate.setAttribute('aria-labelledby', 'driveAccessTitle');
+    gate.append(section); document.body.append(gate);
+    byId('app').inert = true;
+    document.body.classList.add('driveLoginRequired');
     const introduction = byId('viewArchivio').querySelector('.v2Introduction');
     if (introduction) introduction.textContent = 'Scegli l’archivio condiviso Google Drive oppure un archivio locale. Il collegamento a Drive non trasferisce automaticamente i dati locali.';
     const open = document.createElement('button'); open.type = 'button'; open.className = 'btn'; open.id = 'openDrive'; open.textContent = '☁ Collega Drive';
-    open.onclick = () => { switchSection('archivio'); section.scrollIntoView({block: 'start', behavior: 'smooth'}); byId('driveURL').focus(); };
+    open.onclick = () => { switchSection('archivio'); section.scrollIntoView({block: 'start', behavior: 'smooth'}); byId('driveKey').focus(); };
     byId('workFolderReminder').insertAdjacentElement('afterend', open);
     byId('driveForm').onsubmit = connect;
     byId('driveGenerate').onclick = generateKey;
     byId('driveShare').onclick = shareConnection;
-    try { byId('driveURL').value = localStorage.getItem('LesmoDriveEndpoint') || ''; } catch (_) {}
+    byId('driveURL').value = DEFAULT_DRIVE_URL;
+    byId('driveLocal').onclick = async () => { await Promise.all(bootTasks); openApplication(); switchSection('archivio'); };
     const leave = () => {
       if (busy) return;
-      if (!confirm('Scollegare Drive e ricaricare la pagina? Le modifiche non salvate andranno perse. Scarica prima una copia da recuperare se necessario. Dopo la ricarica reinserisci la chiave per ricollegare Drive.')) return;
+      if (!confirm('Uscire e tornare alla richiesta della password? Le modifiche non salvate andranno perse. Scarica prima una copia da recuperare se necessario.')) return;
       location.reload();
     };
     byId('driveDisconnect').onclick = leave;

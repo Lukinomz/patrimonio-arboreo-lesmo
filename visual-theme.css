@@ -1,0 +1,357 @@
+/* Presentazione soltanto: struttura, dati e comportamento restano nell'app. */
+:root,
+body.mobileMode {
+  --ink: #203c2e;
+  --green: #245c43;
+  --lime: #e9f1e5;
+  --bg: #f5f3ec;
+  --line: #e0e3d6;
+  --muted: #5f7466;
+  --ui-leaves: url("assets/botanical-leaves.webp");
+  --ui-shadow: 0 4px 18px rgba(32, 60, 46, .045);
+}
+
+body,
+body.mobileMode { background: var(--bg); color: var(--ink); }
+button, input, select, textarea { font-family: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #8bad80;
+  outline-offset: 3px;
+}
+
+/* Un marchio botanico discreto nella fascia superiore. */
+.header {
+  position: relative;
+  isolation: isolate;
+  height: 82px;
+  padding: 14px 28px;
+  background: #fffefb;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.header::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  right: 28%;
+  top: -20px;
+  width: 300px;
+  height: 120px;
+  background: var(--ui-leaves) right center / contain no-repeat;
+  opacity: .24;
+}
+.header .brand { gap: 12px; }
+.header .brand .logo {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  color: transparent;
+  font-size: 0;
+  background: url("assets/tree-mark.svg") center / contain no-repeat;
+  border-radius: 15px;
+  box-shadow: none;
+}
+.header .name { font-size: 18px; font-weight: 750; color: #254633; letter-spacing: -.5px; }
+.header .eyebrow { color: #5f7766; font-size: 10px; letter-spacing: 1.4px; }
+.v21Version { background: #eef3e9; color: #49674b; border-radius: 4px; }
+.headerActions { gap: 8px; }
+.header .headerActions .btn.adminEntry { background: #fffefb !important; border-color: var(--line) !important; color: #506655 !important; }
+#syncStatus.ready { background: #eef5e8; color: #38613d; border: 1px solid #dce8d2; }
+
+.mainNav {
+  padding: 8px 26px;
+  gap: 7px;
+  background: #fffefb;
+  border-bottom-color: var(--line);
+}
+.mainNav .navChoice {
+  padding: 11px 17px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #617466;
+}
+.mainNav .navChoice:hover { background: #f4f2e8; color: #254f35; }
+.mainNav .navChoice.active {
+  color: #24583a;
+  border: 1px solid #d6e4cf;
+  background: #edf3e6;
+  box-shadow: none;
+}
+
+/* Comandi e campi coerenti nelle diverse schermate. */
+.btn {
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid #d6e1d3;
+  background: #fffefb;
+  color: #36533c;
+  padding: 10px 15px;
+  font-weight: 650;
+  box-shadow: none;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn:hover { background: #f2f6ed; border-color: #afc5a7; box-shadow: 0 2px 8px #244b3310; }
+.btn.main, .btn.main:hover {
+  color: #fff;
+  border-color: #245c43;
+  background: #245c43;
+  box-shadow: 0 3px 8px #245c4318;
+}
+.btn.main:hover { background: #1d4f38; }
+.btn.danger { color: #a13f31; border-color: #ecd7d0; background: #fffaf8; }
+button:disabled { box-shadow: none; }
+:is(.field, .v2FormGrid, .v21FullLabel, .v21Observation) :is(input, select, textarea),
+.tableFilters :is(input, select), .v21SecondaryFilters select {
+  min-height: 43px;
+  padding: 10px 12px;
+  border: 1px solid #d4dfd0;
+  border-radius: 9px;
+  background: #fdfcf8;
+  color: #294733;
+  box-shadow: none;
+}
+:is(.field, .v2FormGrid, .v21FullLabel, .v21Observation) :is(input, select, textarea):focus,
+.tableFilters :is(input, select):focus, .v21SecondaryFilters select:focus {
+  background: #fffefb;
+  border-color: #8eac81;
+  outline-color: #a4be98;
+}
+.v2FormGrid label, .field, .v21FullLabel { color: #4d6652; font-weight: 650; line-height: 1.45; }
+
+.workspace, body.mobileMode .workspace { background: var(--bg); }
+.workspace { padding: 24px 30px 40px; }
+.workTop {
+  position: relative;
+  isolation: isolate;
+  padding: 23px 25px;
+  margin-bottom: 18px;
+  border: 1px solid #dce7d4;
+  border-radius: 16px;
+  background: #eeefdf;
+  overflow: hidden;
+}
+.workTop::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  right: 165px;
+  top: -24px;
+  width: 340px;
+  height: 180px;
+  background: var(--ui-leaves) right top / contain no-repeat;
+  opacity: .2;
+}
+.workTop .workEyebrow { color: #526c4b; font-size: 10px; letter-spacing: 1.7px; }
+.workTop h1 { color: #254731; font-size: 30px; font-weight: 720; letter-spacing: -.9px; margin: 9px 0 6px; }
+.workTop p { font-size: 13px; color: #5b725f; line-height: 1.5; }
+.folderReminder { padding: 11px 15px; border-radius: 10px; box-shadow: none; }
+.folderReminder.online { background: #fffefb; border: 1px solid #dce7d6; color: #426443; }
+
+/* I colori sanitari restano quelli degli stati esistenti. */
+.metricGrid { gap: 14px; margin: 14px 0 22px; }
+.metricGrid .metric {
+  position: relative;
+  min-height: 112px;
+  padding: 17px 18px;
+  background: #fffefb;
+  border: 1px solid var(--line);
+  border-top: 3px solid #749665;
+  border-radius: 13px;
+  box-shadow: var(--ui-shadow);
+}
+.metricGrid .metric::before { display: none; }
+.metricGrid .metric:nth-child(2) { border-top-color: #7b9c9a; background: #fffefb; }
+.metricGrid .metric:nth-child(3) { border-top-color: #c49b49; background: #fffefb; }
+.metricGrid .metric:nth-child(4) { border-top-color: #bf7867; background: #fffefb; }
+.metricGrid .metric:nth-child(5) { border-top-color: #9a91ad; background: #fffefb; }
+.metricGrid .metric > span { color: #5c7360; font-size: 12px; font-weight: 600; }
+.metricGrid .metric strong { color: #294b35; font-size: 32px; font-weight: 720; line-height: 1.5; letter-spacing: -1px; }
+.metricGrid .metric small { color: #65785f; font-size: 11px; }
+.workCard {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fffefb;
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--ui-shadow);
+}
+.workCard h2, .workCard h3 { color: #2c4e35; letter-spacing: -.4px; }
+.sectionHead { margin-bottom: 18px; }
+.sectionHead h2 { font-size: 19px; font-weight: 700; }
+.sectionHead p, .workCard > p { color: #657a68; line-height: 1.55; }
+.tableFilters { gap: 10px; margin-bottom: 10px; }
+.tableFilters input { font-size: 13px; }
+.v21SecondaryFilters { gap: 8px; padding-bottom: 12px; }
+.v21SecondaryFilters select { font-size: 12px; }
+.dataTable { font-size: 13px; }
+.dataTable th, .v3Registry th {
+  color: #60735c;
+  background: #f2f2e8;
+  border-color: #e0e7d9;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .8px;
+  padding: 14px 12px;
+}
+.dataTable td, .v3Registry td { padding: 14px 12px; color: #49614c; border-color: #e9eee5; }
+.dataTable tbody tr:nth-child(even) td { background: #fbfaf5; }
+.dataTable tbody tr:hover td, .v3Registry tbody tr:hover { background: #eff5e9; }
+.codeLink, .v3TableCode { color: #2e6140; text-decoration-color: #b4c8aa; }
+.tableFoot { color: #697c67; padding-top: 15px; }
+
+/* Schede e moduli mantengono struttura e scorrimento originali. */
+.v2Overlay, .modalCover, .adminOverlay.open { background: rgba(28, 48, 32, .48); backdrop-filter: blur(3px); }
+.v2Modal, .modal, .adminDialog, .v3BrowserPanel {
+  border: 1px solid #dce6d5;
+  border-radius: 20px;
+  box-shadow: 0 24px 80px #162b3029;
+  background: #fffefb;
+}
+.v2Modal { padding: 26px; }
+.v2ModalHead { padding-bottom: 17px; margin-bottom: 15px; border-bottom: 1px solid #e5ebdf; }
+.v2ModalHead h2 { color: #2c4d33; font-size: 26px; letter-spacing: -.6px; }
+.v2ModalHead small { color: #758b6c; letter-spacing: 1.4px; }
+.v2X, .close { color: #59754f; background: #f2f6ee; border-color: #dfe8d8; border-radius: 10px; }
+.v21InitialOnly, .v21SurveyGroup { background: #f8f7f0; border-color: #e1e9d9; border-radius: 13px; }
+.v21SurveyGroup { padding: 17px; margin-bottom: 14px; }
+.v21SurveyGroup h4 { color: #46603e; font-size: 12px; letter-spacing: .3px; }
+.v2Footer { gap: 9px; padding-top: 18px; margin-top: 18px; border-top: 1px solid #e5ebdf; }
+.v3BrowserHead { background: #f4f2e8; }
+.v3BrowserHead h2 { color: #2c4e35; }
+.v3BrowserTools, .v3TableMeta { background: #fdfcf7; border-color: #e5ebdf; }
+.v21ImagePlaceholder { background: #f3f6ee; color: #78916c; }
+.v21LastReading, .v21SurveyTarget { border-color: #dee8d5; background: #f1f6eb; color: #536c49; }
+.v2AnaPhotoGrid, .v21SurveyPhotoQueue { gap: 12px; }
+.barRail { background: #edf2e7; }
+.barFill { background: #618655; }
+.mapBtns .mapSv { align-self: flex-end; }
+.archiveViewInfo { background: #f2f6ec; color: #4c6843; }
+.driveCard .archiveBtns { gap: 10px; }
+.driveCard #driveStatus { color: #547047; line-height: 1.65; }
+.driveCard #driveFeedback { color: #a13f31; line-height: 1.55; }
+.toast { background: #254f36; border: 1px solid #437049; border-radius: 12px; box-shadow: 0 8px 24px #233c2b26; }
+
+/* Accesso: gli stessi campi e la stessa autenticazione. */
+#driveAccess { background: #f2efe5; isolation: isolate; }
+#driveAccess::before, #driveAccess::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+  width: min(65vw, 700px);
+  height: min(40vw, 350px);
+  background: var(--ui-leaves) right top / contain no-repeat;
+  opacity: .12;
+}
+#driveAccess::before { right: -10px; top: -10px; }
+#driveAccess::after { left: -100px; bottom: -60px; transform: rotate(180deg); opacity: .08; }
+#driveAccess > .driveCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(100%, 490px);
+  padding: 34px 36px 27px;
+  border: 1px solid #d9e4cf;
+  border-radius: 22px;
+  box-shadow: 0 16px 60px #29482e0d, 0 2px 6px #29482e06;
+}
+#driveAccess > .driveCard::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  right: -16px;
+  top: -8px;
+  width: 230px;
+  height: 170px;
+  background: var(--ui-leaves) right top / contain no-repeat;
+  opacity: .24;
+}
+#driveAccess #driveAccessTitle { font-size: 29px; line-height: 1.2; letter-spacing: -.8px; margin: 0 0 15px; max-width: 330px; }
+#driveAccess #driveAccessTitle::before {
+  content: "";
+  display: block;
+  width: 65px;
+  height: 65px;
+  margin-bottom: 20px;
+  background: url("assets/tree-mark.svg") center / contain no-repeat;
+}
+#driveAccess p.driveLoginOnly { color: #64775e; font-size: 14px; line-height: 1.65; margin-bottom: 23px; }
+#driveAccess #driveKey { min-height: 50px; margin-top: 9px; background: #fffefb; font-size: 17px; }
+#driveAccess #driveConnect { width: 100%; min-height: 48px; margin-top: 4px; font-size: 14px; }
+#driveAccess #driveSetup { padding-top: 12px; margin-top: 20px; border-top: 1px solid #e6ecdf; color: #6d7d65; }
+#driveAccess #driveSetup summary { font-size: 11px; }
+#driveAccess #driveStatus { font-size: 12px; color: #65765c; }
+#driveAccess #driveFeedback:empty { display: none; }
+
+@media (max-width: 1050px) {
+  .header { padding: 12px 20px; }
+  .header::after { right: 27%; width: 200px; opacity: .15; }
+  .workspace { padding: 20px; }
+  .workTop::after { width: 250px; right: 125px; }
+}
+
+@media (max-width: 740px) {
+  .header, body.mobileMode .header { height: 70px; padding: 10px 14px; background: #fffefb; box-shadow: none; }
+  .header::after { right: 76px; top: -7px; width: 130px; height: 85px; opacity: .12; }
+  body.mobileMode .header .brand .logo { display: grid; width: 41px; height: 41px; flex-basis: 41px; font-size: 0; }
+  body.mobileMode .header .brand .name { max-width: 180px; font-size: 13px; line-height: 1.3; color: #2b4e34; }
+  .headerActions .btn { min-height: 38px; padding: 8px 11px; }
+  body.mobileMode .workspace { padding: 14px 12px calc(100px + env(safe-area-inset-bottom)); }
+  .workspace .workTop, body.mobileMode .workTop { padding: 18px; border-radius: 14px; margin: 0 0 14px; align-items: flex-start; }
+  .workTop::after { right: -18px; top: -5px; width: 145px; height: 110px; opacity: .2; }
+  .workTop .workEyebrow { font-size: 8px; letter-spacing: 1.2px; }
+  .workTop h1, body.mobileMode .workTop h1 { font-size: 25px; margin: 8px 0 6px; }
+  body.mobileMode .workTop p { font-size: 12px; }
+  body.mobileMode .mFieldBanner { border-radius: 11px; border-color: #dce7d5; background: #fffefb; color: #57704b; padding: 10px 12px; font-size: 11px; }
+  body.mobileMode .mFieldBanner button { background: #edf3e6; color: #43643a; }
+  body.mobileMode .metricGrid { gap: 9px; margin: 12px 0 15px; }
+  body.mobileMode .metricGrid .metric { min-height: 82px; padding: 10px 13px; border-radius: 12px; }
+  body.mobileMode .metricGrid .metric strong { font-size: 26px; line-height: 1.4; }
+  body.mobileMode .metricGrid .metric small { font-size: 10px; }
+  body.mobileMode #viewRiepilogo .metricGrid .metric:last-child { grid-column: 1 / -1; min-height: 68px; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 14px; }
+  body.mobileMode #viewRiepilogo .metricGrid .metric:last-child strong { grid-column: 2; grid-row: 1 / 3; }
+  body.mobileMode #viewRiepilogo .metricGrid .metric:last-child small { grid-column: 1; }
+  body.mobileMode .workCard { padding: 16px 13px; border-radius: 14px; margin-bottom: 14px; box-shadow: var(--ui-shadow); }
+  body.mobileMode .sectionHead { gap: 10px; margin-bottom: 14px; }
+  body.mobileMode .sectionHead h2 { font-size: 17px; }
+  body.mobileMode .sectionHead p { font-size: 11px; line-height: 1.45; }
+  body.mobileMode .sectionHead .btn { min-width: 90px; padding: 8px 10px; font-size: 11px; }
+  body.mobileMode .mMobileActions { gap: 8px; }
+  body.mobileMode .mMobileActions .btn { min-height: 44px; font-size: 12px; }
+  body.mobileMode #viewRiepilogo > .v2SectionActions { flex-direction: row; justify-content: space-between; align-items: center; margin: 12px 0 8px; }
+  body.mobileMode #viewRiepilogo > .v2SectionActions h2 { font-size: 14px; margin: 0; }
+  body.mobileMode #viewRiepilogo > .v2SectionActions .v2ActionRow { width: auto; flex-wrap: nowrap; }
+  body.mobileMode #viewRiepilogo > .v2SectionActions .btn { min-height: 38px; padding: 8px 10px; font-size: 11px; }
+  body.mobileMode .mTreeCard { border: 1px solid #dfe7d7; border-radius: 11px; padding: 13px; background: #fffefb; box-shadow: none; }
+  body.mobileMode .mTreeCard .mTreeId { color: #3e6c3a; font-size: 13px; font-weight: 700; }
+  body.mobileMode .mTreeCard .mTreeSpec { color: #2f4c35; font-size: 14px; }
+  body.mobileMode .mTreeCard .mTreeAddress { color: #71816a; font-size: 11px; }
+  body.mobileMode .mFieldNav { background: #fffefb; border-top-color: #dce6d4; box-shadow: 0 -4px 20px #263d2c08; }
+  body.mobileMode .mFieldNav button { border-radius: 10px; color: #71806a; }
+  body.mobileMode .mFieldNav button.active { background: #edf3e5; color: #3c6538; }
+  .v2Modal { padding: 18px; border-radius: 16px; }
+  .v2ModalHead h2 { font-size: 23px; }
+  .v21SurveyGroup { padding: 14px; }
+  .v2Footer { flex-wrap: wrap; }
+  .v2Footer .btn { min-height: 44px; }
+  .v2Footer .btn.main { flex: 1 0 100%; }
+  .v3BrowserPanel { border-radius: 0; }
+  .toast { bottom: calc(86px + env(safe-area-inset-bottom)); font-size: 12px; }
+  #driveAccess { padding: 20px 14px; }
+  #driveAccess > .driveCard { padding: 27px 25px 22px; border-radius: 19px; }
+  #driveAccess #driveAccessTitle { font-size: 27px; }
+  #driveAccess #driveAccessTitle::before { width: 58px; height: 58px; margin-bottom: 17px; }
+  #driveAccess > .driveCard::before { width: 185px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .navChoice, .mTreeCard { transition: none; }
+}

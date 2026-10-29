@@ -1208,7 +1208,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 .adminNotice{padding:12px;border-radius:10px;background:#fff8e8;border:1px solid #f0e0b5;font-size:12px;line-height:1.5;color:#765a25}
 @media(max-width:600px){.adminGrid{grid-template-columns:1fr}.adminDialog{padding:15px}.adminEntry{font-size:11px!important}}
 </style><link rel="stylesheet" href="drive-storage.css?v=3"/>
-<link rel="stylesheet" href="visual-theme.css?v=2"/>
+<link rel="stylesheet" href="visual-theme.css?v=3"/>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
@@ -3202,5 +3202,5 @@ $('adminTrashList').addEventListener('click',async e=>{const btn=e.target.closes
 $('adminBackup').onclick=()=>{if(typeof expJSON==='function')expJSON();else alert('Esportazione non disponibile.')};
 })();</script>
 <style>.adminRecord{padding:10px 0;border-bottom:1px solid #e4eae5;font-size:12px}.adminRecord small{display:block;color:#687d70;margin:5px 0}.adminRecord button{font-size:11px;padding:6px 10px}.adminTrashList,.adminAuditList{max-height:250px;overflow:auto}.adminTile textarea{min-height:65px}</style><script src="viewport-layout.js?v=1"></script>
-<script src="drive-storage.js?v=3"></script>
+<script src="drive-storage.js?v=4"></script>
 </body></html>

@@ -9,6 +9,7 @@
   };
   let active = null, connecting = false, busy = 0, blocked = '', statusMode = 'ready';
   let recoverySnapshot = null;
+  let refreshing = false;
   let incomingConnection = null, incomingError = '';
   const bootTasks = [];
   const originalRestore = restoreFolderShortcut;
@@ -122,14 +123,20 @@
     byId('driveGenerate').disabled = connecting || !!active;
     byId('driveShare').disabled = !active || !!busy;
     byId('driveLocal').disabled = connecting || !!active;
+    for (const id of ['driveReload', 'driveRefreshRegistry']) {
+      if (byId(id)) {
+        byId(id).disabled = !active || !!busy || refreshing;
+        byId(id).textContent = refreshing ? 'Aggiornamento…' : '↻ Aggiorna DB';
+      }
+    }
     for (const id of ['driveURL', 'driveKey', 'driveCreate']) byId(id).disabled = connecting || !!active;
     for (const id of localButtons) if (byId(id)) byId(id).disabled = !!active || connecting;
-    const text = active ? blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + active.name + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Archivio condiviso già configurato. Inserisci la password ricevuta dal responsabile.';
+    const text = active ? refreshing ? 'Aggiornamento del DB da Google Drive…' : blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + active.name + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Archivio condiviso già configurato. Inserisci la password ricevuta dal responsabile.';
     byId('driveStatus').textContent = connecting ? 'Collegamento a Google Drive…' : text;
     byId('driveStatus').classList.toggle('error', !!blocked);
     document.body.classList.toggle('driveConnected', !!active);
     if (!active) return;
-    const summary = blocked ? '⚠ Drive: modifiche non salvate' : statusMode === 'saving' ? '◌ Salvataggio su Drive…' : '✓ Google Drive';
+    const summary = refreshing ? '◌ Aggiornamento DB…' : blocked ? '⚠ Drive: modifiche non salvate' : statusMode === 'saving' ? '◌ Salvataggio su Drive…' : '✓ Google Drive';
     byId('syncStatus').textContent = summary;
     byId('syncStatus').className = blocked ? 'error' : 'ready';
     for (const id of ['archiveDetail', 'archiveWorkDetail', 'workFolderReminder', 'mArchiveDetail']) {
@@ -137,7 +144,7 @@
     }
     if (byId('folderName')) byId('folderName').textContent = '☁ ' + active.name;
     if (byId('folderHint')) byId('folderHint').textContent = 'Archivio condiviso Google Drive';
-    if (byId('mBannerContent')) byId('mBannerContent').textContent = blocked || 'Google Drive collegato. I salvataggi aggiornano l’archivio condiviso. Ricollega per vedere le modifiche altrui.';
+    if (byId('mBannerContent')) byId('mBannerContent').textContent = blocked || 'Google Drive collegato. I salvataggi aggiornano l’archivio condiviso. Usa Aggiorna DB per vedere le modifiche altrui.';
   }
 
   function stopWrites(error) {
@@ -153,6 +160,7 @@
 
   saveArchive = function() {
     if (!active) return local.save();
+    if (refreshing) return Promise.reject(Error('Attendi il completamento dell’aggiornamento del DB.'));
     const snapshot = JSON.parse(JSON.stringify(dataSnapshot()));
     const connection = active;
     const write = async () => {
@@ -178,6 +186,7 @@
 
   writePhotoPath = async function(path, blob) {
     if (!active) return local.writePhoto(path, blob);
+    if (refreshing) throw Error('Attendi il completamento dell’aggiornamento del DB.');
     writable();
     if (!safePath(path)) throw Error('Percorso foto non valido.');
     if (blob.size > 12 * 1024 * 1024) throw Error('Per Drive usa foto fino a 12 MB. Riduci l’originale e riprova.');
@@ -211,6 +220,7 @@
   async function importDrive(file) {
     if (!active) return local.importJSON(file);
     try {
+      if (refreshing) throw Error('Attendi il completamento dell’aggiornamento del DB.');
       writable();
       const data = JSON.parse(await file.text()); validate(data);
       const images = data.images || [];
@@ -260,6 +270,53 @@
     document.body.classList.remove('driveLoginRequired');
   }
 
+  async function refreshDatabase() {
+    if (!active || refreshing || busy) return false;
+    if (quickBusy || v2AnagBusy || backupInProgress || (v2SelectedId && byId('v2CensusSave').disabled && v21SurveyStaged.length)) {
+      tell('Attendi la fine del salvataggio o del backup prima di aggiornare il DB.');
+      return false;
+    }
+    if ((blocked || recoverySnapshot) && !confirm('Ci sono modifiche non salvate su Drive. Scarica prima una copia da recuperare se vuoi conservarle. Caricare ora l’archivio aggiornato e scartare le modifiche non salvate?')) return false;
+    const connection = active;
+    const app = byId('app');
+    const wasInert = app.inert;
+    refreshing = true;
+    app.inert = true;
+    display();
+    const load = async () => {
+      busy++;
+      display();
+      try {
+        const result = await call(connection, 'load');
+        validate(result.data);
+        applyData(result.data);
+        connection.revision = result.revision;
+        connection.name = result.folderName || connection.name;
+        folderHandle = {name: 'Google Drive · ' + connection.name};
+        blocked = ''; recoverySnapshot = null; statusMode = 'ready';
+        refresh(); updateArchiveUI();
+        const message = 'DB aggiornato · ' + trees.length + ' alberi · ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'});
+        byId('driveRefreshStatus').textContent = message;
+        byId('driveFeedback').textContent = message;
+        tell('DB aggiornato da Google Drive.');
+        return true;
+      } catch (error) {
+        const message = 'Aggiornamento non riuscito: ' + error.message + ' I dati già caricati sono mantenuti.';
+        byId('driveRefreshStatus').textContent = message;
+        byId('driveFeedback').textContent = message;
+        tell('Aggiornamento non riuscito. Puoi riprovare senza uscire.');
+        return false;
+      } finally {
+        busy--; refreshing = false;
+        app.inert = wasInert;
+        display();
+      }
+    };
+    const task = saveChain.then(load, load);
+    saveChain = task.catch(() => {});
+    return task;
+  }
+
   async function connect(event) {
     event.preventDefault();
     if (connecting || active) return;
@@ -302,7 +359,7 @@
       <form id="driveForm">
         <input type="hidden" id="driveURL">
         <label class="field driveLoginOnly">Password di accesso<input type="password" id="driveKey" name="password" required autocomplete="current-password"></label>
-        <div class="archiveBtns"><button class="btn main driveLoginOnly" id="driveConnect" type="submit">Accedi</button><button class="btn driveSessionOnly" id="driveShare" type="button" disabled>Copia link dell’app</button><button class="btn driveSessionOnly" id="driveReload" type="button" disabled>Ricollega / aggiorna</button><button class="btn driveSessionOnly" id="driveDisconnect" type="button" disabled>Esci</button><button class="btn driveSessionOnly" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn driveSessionOnly" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
+        <div class="archiveBtns"><button class="btn main driveLoginOnly" id="driveConnect" type="submit">Accedi</button><button class="btn driveSessionOnly" id="driveShare" type="button" disabled>Copia link dell’app</button><button class="btn driveSessionOnly" id="driveReload" type="button" disabled>↻ Aggiorna DB</button><button class="btn driveSessionOnly" id="driveDisconnect" type="button" disabled>Esci</button><button class="btn driveSessionOnly" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn driveSessionOnly" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
         <input id="driveImportFile" type="file" accept=".json,application/json" hidden>
         <details id="driveSetup" class="driveLoginOnly"><summary>Prima configurazione e archivio locale</summary>
           <p class="driveHelp">Questa sezione serve al responsabile. Per accedere basta la password.</p>
@@ -314,7 +371,7 @@
         </details>
       </form>
       <p id="driveStatus" role="status" aria-live="polite"></p><p id="driveFeedback" role="alert"></p>
-      <p class="driveSessionOnly">Ogni salvataggio aggiorna l’archivio condiviso su Google Drive. La password viene verificata dal servizio Google e resta in memoria per questa pagina. Per vedere le modifiche degli altri, ricollega l’archivio.</p>
+      <p class="driveSessionOnly">Ogni salvataggio aggiorna l’archivio condiviso su Google Drive. La password viene verificata dal servizio Google e resta in memoria per questa pagina. Per vedere le modifiche degli altri usa Aggiorna DB, senza ripetere l’accesso.</p>
     `;
     const gate = document.createElement('div'); gate.id = 'driveAccess';
     gate.setAttribute('role', 'dialog'); gate.setAttribute('aria-modal', 'true'); gate.setAttribute('aria-labelledby', 'driveAccessTitle');
@@ -326,6 +383,16 @@
     const open = document.createElement('button'); open.type = 'button'; open.className = 'btn'; open.id = 'openDrive'; open.textContent = '☁ Collega Drive';
     open.onclick = () => { switchSection('archivio'); section.scrollIntoView({block: 'start', behavior: 'smooth'}); byId('driveKey').focus(); };
     byId('workFolderReminder').insertAdjacentElement('afterend', open);
+    const refreshButton = document.createElement('button');
+    refreshButton.id = 'driveRefreshRegistry'; refreshButton.type = 'button'; refreshButton.className = 'btn';
+    refreshButton.textContent = '↻ Aggiorna DB'; refreshButton.disabled = true;
+    refreshButton.onclick = refreshDatabase;
+    const registryActions = byId('viewRiepilogo').querySelector('.v2SectionActions');
+    registryActions.querySelector('.v2ActionRow').prepend(refreshButton);
+    const refreshStatus = document.createElement('div');
+    refreshStatus.id = 'driveRefreshStatus'; refreshStatus.className = 'driveRefreshStatus';
+    refreshStatus.setAttribute('role', 'status'); refreshStatus.setAttribute('aria-live', 'polite');
+    registryActions.insertAdjacentElement('afterend', refreshStatus);
     byId('driveForm').onsubmit = connect;
     byId('driveGenerate').onclick = generateKey;
     byId('driveShare').onclick = shareConnection;
@@ -337,7 +404,7 @@
       location.reload();
     };
     byId('driveDisconnect').onclick = leave;
-    byId('driveReload').onclick = leave;
+    byId('driveReload').onclick = refreshDatabase;
     byId('driveRecovery').onclick = async () => { try { await createBackup(); } catch (error) { byId('driveFeedback').textContent = 'Copia non completata: ' + error.message; } };
     byId('driveImport').onclick = () => byId('driveImportFile').click();
     byId('driveImportFile').onchange = event => { const file = event.target.files[0]; event.target.value = ''; if (file) importDrive(file); };

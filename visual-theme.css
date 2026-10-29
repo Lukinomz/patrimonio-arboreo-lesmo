@@ -257,6 +257,8 @@ body.mobileMode .v2Overlay { align-items: flex-start; }
 .driveCard .archiveBtns { gap: 10px; }
 .driveCard #driveStatus { color: #547047; line-height: 1.65; }
 .driveCard #driveFeedback { color: #a13f31; line-height: 1.55; }
+.driveRefreshStatus { color: #59704f; font-size: 12px; line-height: 1.5; margin: 0 0 12px; }
+.driveRefreshStatus:empty { display: none; }
 .toast { background: #254f36; border: 1px solid #437049; border-radius: 12px; box-shadow: 0 8px 24px #233c2b26; }
 
 /* Accesso: gli stessi campi e la stessa autenticazione. */
@@ -348,9 +350,9 @@ body.mobileMode .v2Overlay { align-items: flex-start; }
   body.mobileMode .sectionHead .btn { min-width: 90px; padding: 8px 10px; font-size: 11px; }
   body.mobileMode .mMobileActions { gap: 8px; }
   body.mobileMode .mMobileActions .btn { min-height: 44px; font-size: 12px; }
-  body.mobileMode #viewRiepilogo > .v2SectionActions { flex-direction: row; justify-content: space-between; align-items: center; margin: 12px 0 8px; }
+  body.mobileMode #viewRiepilogo > .v2SectionActions { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 12px 0 8px; }
   body.mobileMode #viewRiepilogo > .v2SectionActions h2 { font-size: 14px; margin: 0; }
-  body.mobileMode #viewRiepilogo > .v2SectionActions .v2ActionRow { width: auto; flex-wrap: nowrap; }
+  body.mobileMode #viewRiepilogo > .v2SectionActions .v2ActionRow { width: auto; flex-wrap: wrap; }
   body.mobileMode #viewRiepilogo > .v2SectionActions .btn { min-height: 38px; padding: 8px 10px; font-size: 11px; }
   body.mobileMode .mTreeCard { border: 1px solid #dfe7d7; border-radius: 11px; padding: 13px; background: #fffefb; box-shadow: none; }
   body.mobileMode .mTreeCard .mTreeId { color: #3e6c3a; font-size: 13px; font-weight: 700; }

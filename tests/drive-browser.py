@@ -53,7 +53,13 @@ def main():
                 context.route("**/*", bridge)
                 page = context.new_page()
                 page.on("pageerror", lambda error: errors.append(str(error)))
-                page.on("dialog", lambda dialog: dialog.accept())
+                def handle_dialog(dialog):
+                    if getattr(page, "dismiss_next_confirmation", False):
+                        page.dismiss_next_confirmation = False
+                        dialog.dismiss()
+                    else:
+                        dialog.accept()
+                page.on("dialog", handle_dialog)
                 assert page.goto(url + ("/?mobile=1" if mobile else "/") + (access_fragment or "")).status == 200
                 if mobile:
                     page.wait_for_function("mArchiveReady")
@@ -145,6 +151,29 @@ def main():
             desktop.locator("#v2AnaAddress").fill("Via aggiornata dal primo utente")
             desktop.locator("#v2AnaSave").click()
             desktop.wait_for_function("!v2AnagBusy")
+            mobile.evaluate("switchSection('anagrafica')")
+            original_url = mobile.url
+            mobile.locator("#driveRefreshRegistry").click()
+            mobile.wait_for_function("trees[0].address === 'Via aggiornata dal primo utente'")
+            assert mobile.url == original_url
+            assert mobile.locator("#driveAccess").is_hidden()
+            assert mobile.locator("#driveKey").input_value() == ""
+            assert mobile.locator("#driveRefreshStatus").inner_text().startswith("DB aggiornato")
+            mobile.evaluate("v2OpenAnag(trees[0])")
+            mobile.locator("#v2AnaPlacement").fill("Davanti al civico 10")
+            mobile.locator("#v2AnaSave").click()
+            mobile.wait_for_function("!v2AnagBusy")
+            assert "Un’altra persona" not in mobile.locator("#driveStatus").inner_text()
+            desktop.evaluate("switchSection('archivio')")
+            desktop.locator("#driveReload").click()
+            desktop.wait_for_function("trees[0].placement === 'Davanti al civico 10'")
+            assert desktop.locator("#driveAccess").is_hidden()
+            print("PASS: Aggiorna DB rilegge le modifiche altrui da Alberi e Archivio, senza password né ricaricare la pagina; salvataggi successivi riusciti")
+
+            desktop.evaluate("v2OpenAnag(trees[0])")
+            desktop.locator("#v2AnaSpecies").fill("Tiglio aggiornato")
+            desktop.locator("#v2AnaSave").click()
+            desktop.wait_for_function("!v2AnagBusy")
             mobile.evaluate("v2OpenAnag(trees[0])")
             mobile.locator("#v2AnaAddress").fill("Modifica concorrente da rifiutare")
             mobile.locator("#v2AnaSave").click()
@@ -161,6 +190,17 @@ def main():
             recovered = json.loads(pathlib.Path(recovery.value.path()).read_text())
             assert recovered["trees"][0]["address"] == "Modifica concorrente da rifiutare"
             print("PASS: copia di recupero conserva la modifica rifiutata anche dopo il rollback della scheda")
+
+            mobile.evaluate("switchSection('anagrafica')")
+            mobile.dismiss_next_confirmation = True
+            mobile.locator("#driveRefreshRegistry").click()
+            assert mobile.evaluate("trees[0].species") != "Tiglio aggiornato"
+            assert "Un’altra persona" in mobile.locator("#driveStatus").inner_text()
+            mobile.locator("#driveRefreshRegistry").click()
+            mobile.wait_for_function("trees[0].species === 'Tiglio aggiornato'")
+            assert mobile.locator("#driveAccess").is_hidden()
+            assert "Un’altra persona" not in mobile.locator("#driveStatus").inner_text()
+            print("PASS: aggiornamento dopo conflitto richiede conferma e mantiene la sessione")
 
             with probe.expect_download() as download:
                 probe.locator("#driveRecovery").click()
@@ -183,6 +223,24 @@ def main():
             assert failure
             assert "non confermata" in probe.locator("#driveStatus").inner_text()
             print("PASS: errore di rete visibile e scritture bloccate")
+            probe.evaluate("switchSection('anagrafica')")
+            previous_trees = probe.evaluate("JSON.stringify(trees)")
+            def fail_read(route):
+                if json.loads(route.request.post_data)["action"] == "load":
+                    route.abort()
+                else:
+                    route.fallback()
+            probe.route(ENDPOINT, fail_read)
+            probe.locator("#driveRefreshRegistry").click()
+            probe.wait_for_function("document.getElementById('driveRefreshStatus').textContent.includes('Aggiornamento non riuscito')")
+            assert probe.evaluate("JSON.stringify(trees)") == previous_trees
+            assert probe.locator("#driveAccess").is_hidden()
+            assert not probe.locator("#app").evaluate("e => e.inert")
+            probe.unroute(ENDPOINT, fail_read)
+            probe.locator("#driveRefreshRegistry").click()
+            probe.wait_for_function("document.getElementById('driveRefreshStatus').textContent.startsWith('DB aggiornato')")
+            assert probe.locator("#driveAccess").is_hidden()
+            print("PASS: errore durante Aggiorna DB conserva dati e sessione; nuovo tentativo riuscito")
 
             offline = new_page(mobile=True)
             offline.locator("#driveSetup").evaluate("e => e.open = true")

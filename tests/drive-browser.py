@@ -106,6 +106,7 @@ def main():
             print("PASS: chiave errata rifiutata, creazione solo esplicita, chiave non persistita")
 
             desktop.evaluate("v2OpenAnag(null)")
+            assert desktop.locator("#v2AnaCode").input_value() == "LESMO-A0001"
             desktop.locator("#v2AnaCode").fill("DRIVE-TEST-1")
             desktop.locator("#v2AnaSpecies").fill("Tiglio")
             desktop.locator("#v21InitialDate").fill("2026-10-29")
@@ -241,6 +242,79 @@ def main():
             probe.wait_for_function("document.getElementById('driveRefreshStatus').textContent.startsWith('DB aggiornato')")
             assert probe.locator("#driveAccess").is_hidden()
             print("PASS: errore durante Aggiorna DB conserva dati e sessione; nuovo tentativo riuscito")
+
+            def server_request(action, **payload):
+                request = urllib.request.Request("http://127.0.0.1:8766/", data=json.dumps({"key": KEY, "action": action, **payload}).encode(), headers={"Content-Type": "text/plain"})
+                with urllib.request.urlopen(request) as response:
+                    return json.load(response)
+
+            initial = server_request("load")["result"]
+            seed = initial["data"]
+            seed["trees"][0]["code"] = "LESMO-A0001"
+            seed["trees"].append({**seed["trees"][0], "id": "LES-000003", "code": "LESMO-A0003"})
+            seed["nextId"] = 4
+            assert server_request("save", revision=initial["revision"], data=seed)["ok"]
+            numbered = new_page(mobile=True)
+            connect(numbered)
+            numbered.evaluate("switchSection('anagrafica')")
+            numbered.locator("#mAddNewTree").click()
+            numbered.locator("#v2AnagOverlay").wait_for(state="visible")
+            assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0002"
+            numbered.locator("#v2AnaSpecies").fill("Albero numero due")
+            numbered.locator("#v2AnaCode").fill(" lesmo-a0001 ")
+            numbered.locator("#v2AnaSave").click()
+            assert numbered.locator("#v2AnaCodeError").is_visible()
+            assert "Codice già utilizzato" in numbered.locator("#v2AnaCodeError").inner_text()
+            assert len(server_request("load")["result"]["data"]["trees"]) == 2
+            numbered.locator("#v2AnaCode").fill("LESMO-A1")
+            numbered.locator("#v2AnaSave").click()
+            assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0001"
+            assert numbered.locator("#v2AnaCodeError").is_visible()
+            assert len(server_request("load")["result"]["data"]["trees"]) == 2
+            numbered.locator("#v2AnaCode").fill("LESMO-A0002")
+            assert numbered.locator("#v2AnaCodeError").is_hidden()
+            numbered.locator("#v2AnaSave").click()
+            numbered.wait_for_function("trees.length === 3 && !v2AnagBusy")
+            assert numbered.evaluate("trees.find(t => t.code === 'LESMO-A0001').id") == seed["trees"][0]["id"]
+            assert numbered.evaluate("photos[0].relativePath") == seed["photos"][0]["relativePath"]
+            numbered.locator("#mAddNewTree").click()
+            numbered.locator("#v2AnagOverlay").wait_for(state="visible")
+            assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0004"
+            numbered.locator("#v2AnagClose").click()
+            print("PASS: LESMO-A0002 proposto fra 0001 e 0003; duplicato manuale rifiutato anche con minuscole/spazi; riferimenti e foto esistenti preservati")
+
+            current = server_request("load")["result"]
+            free_again = current["data"]
+            removed_ids = {t["id"] for t in free_again["trees"] if t["code"] == "LESMO-A0002"}
+            free_again["trees"] = [t for t in free_again["trees"] if t["id"] not in removed_ids]
+            free_again["history"] = [h for h in free_again["history"] if h["treeId"] not in removed_ids]
+            assert server_request("save", revision=current["revision"], data=free_again)["ok"]
+            numbered.locator("#mAddNewTree").click()
+            numbered.locator("#v2AnagOverlay").wait_for(state="visible")
+            assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0002"
+            assert numbered.evaluate("trees.length") == 2
+            numbered.locator("#v2AnaSpecies").fill("Tentativo concorrente")
+            latest = server_request("load")["result"]
+            latest["data"]["trees"].append({**latest["data"]["trees"][0], "id": "LES-000099", "code": "LESMO-A0002", "species": "Inserito da altra persona"})
+            latest["data"]["nextId"] = 100
+            assert server_request("save", revision=latest["revision"], data=latest["data"])["ok"]
+            numbered.locator("#v2AnaSave").click()
+            numbered.wait_for_function("document.getElementById('driveStatus').textContent.includes('Un’altra persona')")
+            assert "archivio è cambiato" in numbered.locator("#v2AnaCodeError").inner_text()
+            persisted = server_request("load")["result"]["data"]
+            occupied = [t for t in persisted["trees"] if t["code"] == "LESMO-A0002"]
+            assert len(occupied) == 1 and occupied[0]["species"] == "Inserito da altra persona"
+            print("PASS: apertura nuovo albero rilegge l’archivio; occupazione concorrente del codice blocca il salvataggio senza sovrascrivere")
+            numbered.evaluate("v2CloseAnag()")
+
+            planted = new_page()
+            connect(planted)
+            planted.evaluate("newPlantTree()")
+            assert planted.locator("#v2AnaCode").input_value() == "LESMO-A0004"
+            assert planted.locator("#v21Origin").input_value() == "planted"
+            assert planted.locator("#v21PlantDate").input_value()
+            planted.locator("#v2AnagClose").click()
+            print("PASS: nuova piantumazione mantiene origine e data dopo il controllo del codice libero")
 
             offline = new_page(mobile=True)
             offline.locator("#driveSetup").evaluate("e => e.open = true")

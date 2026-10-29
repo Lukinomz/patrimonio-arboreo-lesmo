@@ -123,6 +123,9 @@ button:disabled { box-shadow: none; }
   outline-color: #a4be98;
 }
 .v2FormGrid label, .field, .v21FullLabel { color: #4d6652; font-weight: 650; line-height: 1.45; }
+.v2CodeError { color: #a13f31; font-size: 12px; font-weight: 500; line-height: 1.5; }
+.v2CodeError[hidden] { display: none; }
+.v2FormGrid input[aria-invalid="true"] { border-color: #b65d49; background: #fffaf7; }
 
 .workspace, body.mobileMode .workspace { background: var(--bg); }
 .workspace { padding: 24px 30px 40px; }

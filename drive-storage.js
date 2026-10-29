@@ -10,6 +10,7 @@
   let active = null, connecting = false, busy = 0, blocked = '', statusMode = 'ready';
   let recoverySnapshot = null;
   let refreshing = false;
+  let openingNewTree = false;
   let incomingConnection = null, incomingError = '';
   const bootTasks = [];
   const originalRestore = restoreFolderShortcut;
@@ -270,7 +271,7 @@
     document.body.classList.remove('driveLoginRequired');
   }
 
-  async function refreshDatabase() {
+  async function refreshDatabase({silent = false} = {}) {
     if (!active || refreshing || busy) return false;
     if (quickBusy || v2AnagBusy || backupInProgress || (v2SelectedId && byId('v2CensusSave').disabled && v21SurveyStaged.length)) {
       tell('Attendi la fine del salvataggio o del backup prima di aggiornare il DB.');
@@ -298,7 +299,7 @@
         const message = 'DB aggiornato · ' + trees.length + ' alberi · ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'});
         byId('driveRefreshStatus').textContent = message;
         byId('driveFeedback').textContent = message;
-        tell('DB aggiornato da Google Drive.');
+        if (!silent) tell('DB aggiornato da Google Drive.');
         return true;
       } catch (error) {
         const message = 'Aggiornamento non riuscito: ' + error.message + ' I dati già caricati sono mantenuti.';
@@ -316,6 +317,20 @@
     saveChain = task.catch(() => {});
     return task;
   }
+
+  const originalOpenAnag = v2OpenAnag;
+  v2OpenAnag = function(tree = null, latitude, longitude) {
+    if (tree || !active) return originalOpenAnag(tree, latitude, longitude);
+    if (openingNewTree) return Promise.resolve(false);
+    openingNewTree = true;
+    return (async () => {
+      try {
+        if (!await refreshDatabase({silent: true})) return false;
+        originalOpenAnag(null, latitude, longitude);
+        return true;
+      } finally { openingNewTree = false; }
+    })();
+  };
 
   async function connect(event) {
     event.preventDefault();

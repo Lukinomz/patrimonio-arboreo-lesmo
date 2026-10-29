@@ -1208,7 +1208,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 .adminNotice{padding:12px;border-radius:10px;background:#fff8e8;border:1px solid #f0e0b5;font-size:12px;line-height:1.5;color:#765a25}
 @media(max-width:600px){.adminGrid{grid-template-columns:1fr}.adminDialog{padding:15px}.adminEntry{font-size:11px!important}}
 </style><link rel="stylesheet" href="drive-storage.css?v=3"/>
-<link rel="stylesheet" href="visual-theme.css?v=3"/>
+<link rel="stylesheet" href="visual-theme.css?v=4"/>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
@@ -1982,7 +1982,14 @@ const WORK_TYPES=new Set(['sopralluogo','potatura','trattamento','piantumazione'
 let historicalPage=0;
 const codeKey=s=>String(s||'').normalize('NFKC').trim().toLocaleUpperCase('it-IT');
 function publicCode(t){return String(t?.code||t?.id||'').trim()}
-function getByCode(code){const k=codeKey(code);return trees.find(t=>codeKey(publicCode(t))===k)}
+function publicCodeKey(code){const normalized=codeKey(code),match=normalized.match(/^LESMO-A(\d+)$/);if(match){const number=Number(match[1]);if(Number.isSafeInteger(number)&&number>0)return 'LESMO-A'+String(number).padStart(4,'0')}return normalized}
+function getByCode(code){const k=publicCodeKey(code);return trees.find(t=>publicCodeKey(publicCode(t))===k)}
+function nextPublicCode(){
+ const used=new Set();
+ for(const tree of trees){const match=codeKey(publicCode(tree)).match(/^LESMO-A(\d+)$/);if(match){const number=Number(match[1]);if(Number.isSafeInteger(number)&&number>0)used.add(number)}}
+ let number=1;while(used.has(number))number++;
+ return 'LESMO-A'+String(number).padStart(4,'0');
+}
 function validateCode(code,exceptId){if(!code||code.length>50||/[<>\r\n]/.test(code)||/^[=+@]/.test(code)){tell('Codice obbligatorio (massimo 50 caratteri; evita simboli come =, + o @).');$('publicCode').focus();return false}
  const duplicate=getByCode(code);if(duplicate&&duplicate.id!==exceptId){tell('Codice già assegnato a un altro albero: '+publicCode(duplicate));$('publicCode').focus();return false}return true}
 function nextTechnicalId(){let id;do{id='LES-'+String(seq++).padStart(6,'0')}while(trees.some(t=>t.id===id));return id}
@@ -2470,7 +2477,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <div aria-labelledby="v2AnagTitle" aria-modal="true" class="v2Overlay hidden" id="v2AnagOverlay" role="dialog"><form class="v2Modal" id="v2AnagForm"><div class="v2ModalHead"><div><small>ANAGRAFICA UFFICIALE</small><h2 id="v2AnagTitle">Nuovo albero</h2></div><button aria-label="Chiudi" class="v2X" id="v2AnagClose" type="button">×</button></div>
 <p class="v2Muted v21AnaInfo">Identificativo, specie e posizione sono modificabili solo qui. Tutte le correzioni vengono registrate.</p>
-<div class="v2FormGrid"><label>Codice albero *<input id="v2AnaCode" maxlength="50" placeholder="LES-000001" required=""/></label><label>Specie / nome comune *<input id="v2AnaSpecies" placeholder="Es. Tiglio; Non identificata" required=""/></label><label>Nome scientifico<input id="v2AnaScientific" placeholder="Facoltativo"/></label><label>Via / località<input id="v2AnaAddress" placeholder="Es. Via IV Novembre"/></label><label>Contesto<select id="v2AnaSite"><option value="">Non classificato</option><option value="strada">Alberatura stradale</option><option value="parco">Parco o area verde</option><option value="giardino">Giardino</option><option value="boschivo">Area boschiva</option><option value="altro">Altro</option></select></label><label>Posizione descrittiva<input id="v2AnaPlacement" placeholder="Es. davanti al civico 12"/></label><label>Latitudine<input id="v2AnaLat" inputmode="decimal" placeholder="Facoltativa"/></label><label>Longitudine<input id="v2AnaLon" inputmode="decimal" placeholder="Facoltativa"/></label></div>
+<div class="v2FormGrid"><label>Codice albero *<input id="v2AnaCode" maxlength="50" placeholder="LESMO-A0001" required="" aria-describedby="v2AnaCodeError"/><small id="v2AnaCodeError" class="v2CodeError" role="alert" hidden></small></label><label>Specie / nome comune *<input id="v2AnaSpecies" placeholder="Es. Tiglio; Non identificata" required=""/></label><label>Nome scientifico<input id="v2AnaScientific" placeholder="Facoltativo"/></label><label>Via / località<input id="v2AnaAddress" placeholder="Es. Via IV Novembre"/></label><label>Contesto<select id="v2AnaSite"><option value="">Non classificato</option><option value="strada">Alberatura stradale</option><option value="parco">Parco o area verde</option><option value="giardino">Giardino</option><option value="boschivo">Area boschiva</option><option value="altro">Altro</option></select></label><label>Posizione descrittiva<input id="v2AnaPlacement" placeholder="Es. davanti al civico 12"/></label><label>Latitudine<input id="v2AnaLat" inputmode="decimal" placeholder="Facoltativa"/></label><label>Longitudine<input id="v2AnaLon" inputmode="decimal" placeholder="Facoltativa"/></label></div>
 <div id="v21InitialOnly" class="v21InitialOnly">
  <div class="v21FormSectionTitle"><strong>Prima registrazione</strong><span>Compila quello che conosci, il resto potrà essere rilevato in seguito</span></div>
  <div class="v2FormGrid">
@@ -2552,8 +2559,10 @@ function v2CloseDetail(){v2D('v2DetailOverlay').classList.add('hidden');v2Detail
 function v2Number(id){const v=v2D(id).value.trim();if(!v)return null;const n=Number(v.replace(',','.'));return Number.isFinite(n)?n:NaN}
 function v2SafeDate(v){return dateFromCsv(v)||localDay()}
 function v2Warn(msg){tell(msg);return false}
+function v2ClearCodeError(){v2D('v2AnaCode').removeAttribute('aria-invalid');v2D('v2AnaCodeError').hidden=true;v2D('v2AnaCodeError').textContent=''}
+function v2CodeWarning(message){v2D('v2AnaCodeError').textContent=message;v2D('v2AnaCodeError').hidden=false;v2D('v2AnaCode').setAttribute('aria-invalid','true');v2D('v2AnaCode').focus();return false}
 function v2OpenAnag(t=null,latitude,longitude){
- v2CloseDetail();v2AnagId=t?.id||null;const suggested='LES-'+String(seq).padStart(6,'0');
+ v2CloseDetail();v2AnagId=t?.id||null;const suggested=nextPublicCode();v2ClearCodeError();
  const fromMap=v2AnaMapDraft&&((t?.id||null)===v2AnaMapDraft.id)&&latitude!==undefined&&longitude!==undefined;
  if(!fromMap){v2ClearAnaPhotos();v2AnaMapDraft=null;v2D('v2AnaPhotoDate').value='';}
  v2D('v2AnagTitle').textContent=t?'Modifica Anagrafica · '+publicCode(t):'Nuovo albero · Anagrafica';
@@ -2567,10 +2576,11 @@ function v2OpenAnag(t=null,latitude,longitude){
 }
 async function v2SaveAnag(e){
  e.preventDefault();if(v2AnagBusy)return;if(!folderHandle){tell('Prima collega la cartella archivio dal PC.');return;}
- const code=v2D('v2AnaCode').value.trim(),species=v2D('v2AnaSpecies').value.trim();
- if(!code||code.length>50||/[<>\r\n]/.test(code)||/^[=+@]/.test(code))return v2Warn('Codice identificativo non valido.');
+ const enteredCode=v2D('v2AnaCode').value.trim(),editingCodeTree=trees.find(t=>t.id===v2AnagId);
+ const code=/^LESMO-A\d+$/i.test(enteredCode)&&(!editingCodeTree||enteredCode!==publicCode(editingCodeTree))?publicCodeKey(enteredCode):enteredCode,species=v2D('v2AnaSpecies').value.trim();v2D('v2AnaCode').value=code;
+ if(!code||code.length>50||/[<>\r\n]/.test(code)||/^[=+@]/.test(code))return v2CodeWarning('Codice identificativo non valido.');
  if(!species)return v2Warn('Indica la specie o “Non identificata”.');
- const dupe=getByCode(code);if(dupe&&dupe.id!==v2AnagId)return v2Warn('Codice già utilizzato da '+publicCode(dupe));
+ const dupe=getByCode(code);if(dupe&&dupe.id!==v2AnagId)return v2CodeWarning('Codice già utilizzato da '+publicCode(dupe)+'. Scegli un codice libero: nessun albero è stato modificato.');
  const lat=v2Number('v2AnaLat'),lon=v2Number('v2AnaLon');
  if((lat===null)!==(lon===null))return v2Warn('Indica entrambe le coordinate oppure lasciale vuote.');
  if((lat!==null)&&(!isValid({lat,lon})||(lat===0&&lon===0)))return v2Warn('Coordinate GPS non valide.');
@@ -2616,7 +2626,7 @@ async function v2SaveAnag(e){
   v2ClearAnaPhotos();v2CloseAnag({keep:true,force:true});v2AnaMapDraft=null;v2SelectedId=id;refresh();switchSection('anagrafica');
   const savedTree=trees.find(x=>x.id===id);if(savedTree&&isValid(savedTree)){focusedTreeId=id;mp.lat=+savedTree.lat;mp.lon=+savedTree.lon;drawPins();}
   tell('Anagrafica '+code+' salvata'+(result.saved?' · '+result.saved+' fotografia/e archiviate':'')+'. Il primo censimento è registrato nello storico.');
- }catch(ex){tell('Salvataggio anagrafica non riuscito: '+ex.message);console.error(ex)}
+ }catch(ex){if(ex.code==='CONFLICT')v2CodeWarning('L’archivio è cambiato mentre compilavi: nessun dato è stato sovrascritto. Chiudi la scheda, premi Aggiorna DB e riprova.');tell('Salvataggio anagrafica non riuscito: '+ex.message);console.error(ex)}
  finally{v2AnagBusy=false;saveBtn.disabled=false;saveBtn.textContent='✓ Salva Anagrafica e foto';}
 }
 function v2Detail(t){if(!t)return;
@@ -2633,7 +2643,7 @@ openEditor=function(t,lat,lon){if(!t){v2OpenAnag(null,lat,lon);return;}v2Detail(
 closeEditor=function(){v2ClosePhotos()};
 createManualTree=function(){hideAddChoice();stopMapAdd();switchSection('anagrafica');v2OpenAnag(null)};
 createMappedTree=function(){hideAddChoice();v2MapTask='anagrafica';stopMapAdd();startAdd()};
-newPlantTree=function(){switchSection('anagrafica');v2OpenAnag(null);v2D('v21Origin').value='planted';v2D('v21PlantDate').value=localDay();v21OriginToggle();};
+newPlantTree=async function(){switchSection('anagrafica');if(await v2OpenAnag(null)===false)return;v2D('v21Origin').value='planted';v2D('v21PlantDate').value=localDay();v21OriginToggle();};
 showTreeMapCard=function(t){if(v2MapTask==='censimento'){v2MapTask=null;v2SelectCensus(t.id);switchSection('censimento');tell('Albero '+publicCode(t)+' selezionato per la rilevazione.');return}if(v2MapTask==='monitoraggio'){v2MapTask=null;v2D('lifeCode').value=publicCode(t);v2D('v2EventCode').value=publicCode(t);switchSection('censimento');v2D('v21EventsCollapse').open=true;tell('Albero '+publicCode(t)+' selezionato per l’evento.');return}v2OldShowTreeMapCard(t)};
 function v2JumpMap(task){v2CloseDetail();v2MapTask=task;switchSection('mappa');tell(task==='censimento'?'Clicca un segnaposto per selezionare l’albero da censire.':task==='monitoraggio'?'Clicca un segnaposto per selezionare l’albero da monitorare.':'Seleziona un albero.');}
 function v2SelectCensus(id){v2SelectedId=id;const t=trees.find(x=>x.id===id);if(!t)return;v2D('v2CensusQuery').value=publicCode(t);v2D('v2CensusIdentity').innerHTML=`<b>${esc(publicCode(t))} · ${esc(t.species||'Non identificata')}</b><br>${esc(t.address||'Località non indicata')} · ${esc(statusName[t.status]||'Non valutato')}<br><span class="v2SplitNote">Identità e coordinate bloccate in Censimento · ${isValid(t)?'GPS presente':'GPS da completare in Anagrafica'}</span>`;
@@ -2686,6 +2696,7 @@ function v2RegisterUI(){
  // Replace older entry choices while preserving same menu names.
  on('v2AnaNew',()=>v2OpenAnag());on('v2AnaSelectMap',()=>switchSection('mappa'));
  on('v2AnagClose',()=>v2CloseAnag());on('v2AnaCancel',()=>v2CloseAnag());v2D('v2AnagForm').addEventListener('submit',v2SaveAnag);
+ v2D('v2AnaCode').addEventListener('input',v2ClearCodeError);
  on('v2AnaAddPhotos',()=>v2D('v2AnaPhotoFiles').click());
  v2D('v2AnaPhotoFiles').addEventListener('change',e=>{if(e.target.files.length)v2AddAnagPhotos(e.target.files)});
  on('v2AnaLocate',()=>{const id=v2AnagId;v2AnaMapDraft={id,fields:Object.fromEntries(['v2AnaCode','v2AnaSpecies','v2AnaScientific','v2AnaAddress','v2AnaSite','v2AnaPlacement','v2AnaLat','v2AnaLon','v21Origin','v21PlantDate','v21InitialDate','v21InitialStatus','v21InitialHeight','v21InitialDiameter','v21InitialCrown','v21InitialNotes'].map(k=>[k,v2D(k).value]))};v2CloseAnag({keep:true});if(id){placingTreeId=id;switchSection('mappa');addMode=true;v2D('cancelMapAdd').classList.remove('hidden');v2D('hintTitle').textContent='Scegli la nuova posizione';v2D('hintSub').textContent='Clicca sulla chioma dell’albero esistente: aggiornerai solo le coordinate in Anagrafica.';const t=trees.find(x=>x.id===id);if(t&&isValid(t)){mp.lat=+t.lat;mp.lon=+t.lon;draw()}else draw();}else createMappedTree();});
@@ -3202,5 +3213,5 @@ $('adminTrashList').addEventListener('click',async e=>{const btn=e.target.closes
 $('adminBackup').onclick=()=>{if(typeof expJSON==='function')expJSON();else alert('Esportazione non disponibile.')};
 })();</script>
 <style>.adminRecord{padding:10px 0;border-bottom:1px solid #e4eae5;font-size:12px}.adminRecord small{display:block;color:#687d70;margin:5px 0}.adminRecord button{font-size:11px;padding:6px 10px}.adminTrashList,.adminAuditList{max-height:250px;overflow:auto}.adminTile textarea{min-height:65px}</style><script src="viewport-layout.js?v=1"></script>
-<script src="drive-storage.js?v=4"></script>
+<script src="drive-storage.js?v=5"></script>
 </body></html>

@@ -464,3 +464,10 @@ body:not(.mobileMode) .modehint:has(#cancelMapAdd:not(.hidden)) {
 body:not(.mobileMode) .modehint :is(#hintTitle, #hintSub) { display: none; }
 body:not(.mobileMode) .searchPlace { top: 12px; }
 body:not(.mobileMode) .mapStatusFilters { top: 88px; }
+
+/* Gli stessi nomi delle sezioni su PC e telefono. */
+body.mobileMode .mFieldNav { gap: 0; padding-left: 2px; padding-right: 2px; }
+body.mobileMode #mFieldNav button small {
+  font-size: clamp(9px, 2.4vw, 11px);
+  letter-spacing: -.25px;
+}

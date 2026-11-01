@@ -65,6 +65,7 @@ def main():
                 assert page.evaluate("p => !!document.elementFromPoint(p.x, p.y)?.closest('#v2AnagClose')", {"x": box["x"] + box["width"] / 2, "y": box["y"] + box["height"] / 2}), label + ": X coperta da un elemento della pagina"
 
             page.locator("#mAddNewTree").click()
+            page.locator("#chooseManualTree").click()
             visible_close("Barra URL aperta")
             print("PASS: X visibile e cliccabile sotto la barra URL")
             page.locator("#v2AnagForm").evaluate("e => e.scrollTop = e.scrollHeight")
@@ -81,6 +82,7 @@ def main():
             page.set_viewport_size({"width": 844, "height": 390})
             page.evaluate("setTestViewport({width:844, height:290, offsetTop:40})")
             page.locator("#mAddNewTree").click()
+            page.locator("#chooseManualTree").click()
             visible_close("iPhone orizzontale")
             page.locator("#v2AnagClose").click()
             assert page.locator("#v2AnagOverlay").is_hidden()

@@ -1,0 +1,117 @@
+/* Regole limitate al registro anagrafico. */
+.v21Registry { --registry-border: #dce4d8; }
+.v21Registry .sectionHead { align-items: center; margin-bottom: 18px; }
+.v21Registry .sectionHead h2 { font-size: 21px; letter-spacing: -.4px; }
+.v21Registry .sectionHead p { font-size: 13px; margin-top: 5px; color: #60715f; }
+.registrySearchRow { margin-bottom: 12px; }
+.registrySearch, .registryField { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.registryFieldLabel { color: #52664e; font-size: 11px; font-weight: 700; line-height: 1.3; }
+.registrySearch input, .registryField select, .registryFacetPanel input, .registryMobileSort select {
+  width: 100%; min-width: 0; min-height: 44px; padding: 11px 12px; border: 1px solid var(--registry-border);
+  border-radius: 8px; color: #294733; background: #fffefb; font-size: 13px; margin: 0;
+}
+.registrySearch input { background: #f6f8f3; font-size: 14px; }
+.registryFilters { display: grid; grid-template-columns: repeat(3,minmax(0,1.2fr)) repeat(2,minmax(0,1fr)) auto; gap: 10px; align-items: end; }
+.registryFilters .registryReset { min-height: 44px; margin: 0; padding: 10px 12px; font-size: 12px; white-space: nowrap; }
+.registryReset:disabled { opacity: .45; cursor: default; }
+.registryField.isFiltered select { background: #edf4e7; border-color: #9cbb8f; }
+.registryFacet { position: relative; min-width: 0; }
+.registryFacet summary { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; cursor: pointer; list-style: none; }
+.registryFacet summary::-webkit-details-marker { display: none; }
+.registryFacet summary .registryFieldLabel { grid-column: 1/-1; }
+.registryFacetValue { display: block; min-height: 44px; border: 1px solid var(--registry-border); border-radius: 8px; background: #fffefb; padding: 12px 28px 10px 12px; font-size: 13px; color: #294733; line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; grid-column: 1/-1; }
+.registryChevron { position: absolute; right: 12px; bottom: 14px; font-size: 15px; pointer-events: none; }
+.registryFacet.isFiltered .registryFacetValue { background: #edf4e7; border-color: #9cbb8f; }
+.registryFacet[open] { z-index: 25; }
+.registryFacet[open] .registryFacetValue { border-color: #6e9461; }
+.registryFacetPanel { position: absolute; z-index: 25; top: calc(100% + 5px); left: 0; width: max(100%,280px); max-width: calc(100vw - 48px); border: 1px solid #ccd9c5; background: #fffefb; padding: 10px; border-radius: 12px; box-shadow: 0 12px 32px #24432b24; }
+.registryFacetPanel input[type=search] { background: #f5f8f1; min-height: 40px; }
+.registryFacetOptions { max-height: 260px; overflow: auto; overscroll-behavior: contain; margin-top: 8px; }
+.registryFacetOption { display: flex; align-items: center; gap: 9px; padding: 10px 7px; min-height: 42px; border-radius: 6px; cursor: pointer; color: #345337; font-size: 13px; }
+.registryFacetOption:hover { background: #f0f5e9; }
+.registryFacetOption:has(:checked) { background: #eaf3e1; }
+.registryFacetOption:has(:disabled) { color: #85917e; cursor: default; }
+.registryFacetOption input { width: 17px; height: 17px; min-height: 0; padding: 0; margin: 0; flex-shrink: 0; accent-color: #396846; }
+.registryFacetOption > span { flex: 1; overflow-wrap: anywhere; }
+.registryFacetOption small { color: #6f8268; font-variant-numeric: tabular-nums; }
+.registryNoOptions { padding: 12px; font-size: 13px; color: #6c7c65; }
+.registryActiveFilters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.registryActiveFilters[hidden] { display: none; }
+.registryActiveFilters button { display: flex; align-items: center; gap: 10px; border: 1px solid #d2dfc8; border-radius: 7px; background: #eef4e7; color: #3d603a; padding: 7px 10px; max-width: 100%; font-size: 12px; overflow-wrap: anywhere; text-align: left; }
+.registryActiveFilters button span { font-size: 17px; line-height: 1; }
+.registryOrderRow { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 14px 0 9px; min-height: 22px; }
+#registryOrder { color: #6d7e65; font-size: 11px; }
+.registryMobileSort { display: none; }
+.v21Registry #v21RegistryViewport { height: clamp(340px,52vh,740px); border: 1px solid var(--registry-border); border-radius: 9px; scrollbar-gutter: stable; }
+.v21Registry #overviewTable { width: 100%; min-width: 1120px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+#overviewTable th { padding: 0; font-size: 10px; background: #edf2e7; z-index: 3; vertical-align: middle; }
+#overviewTable th button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; border: 0; padding: 12px 14px; background: transparent; color: #63755a; font: inherit; font-weight: 750; text-transform: uppercase; letter-spacing: .35px; white-space: nowrap; text-align: left; }
+#overviewTable th button:hover { background: #e0ebd7; color: #254f30; }
+#overviewTable th[aria-sort=ascending], #overviewTable th[aria-sort=descending] { background: #dfebd5; }
+#overviewTable th[aria-sort=ascending] button, #overviewTable th[aria-sort=descending] button { color: #244d2b; }
+#overviewTable .registrySortIcon { color: #8c9c81; font-size: 15px; font-weight: 500; }
+#overviewTable th[aria-sort=ascending] .registrySortIcon, #overviewTable th[aria-sort=descending] .registrySortIcon { color: #315f37; font-weight: 800; }
+#overviewTable td { padding: 13px 14px; height: 55px; line-height: 1.4; vertical-align: middle; border-bottom: 1px solid #e6ebe0; }
+#overviewTable tbody tr:nth-child(odd) td { background: #fffefb; }
+#overviewTable tbody tr:nth-child(even) td { background: #f8faf5; }
+#overviewTable tbody tr:hover td { background: #eef4e7; }
+#overviewTable th:first-child { position: sticky; left: 0; z-index: 4; }
+#overviewTable td:first-child:not([colspan]) { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 #e0e7d8; }
+#overviewTable .codeLink { white-space: nowrap; font-size: 13px; }
+#overviewTable .registryNumber { text-align: right; font-variant-numeric: tabular-nums; }
+#overviewTable th:nth-child(6) button, #overviewTable th:nth-child(7) button { justify-content: flex-end; }
+#overviewTable .registryDate { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12px; }
+.registryGps { min-width: 142px; white-space: nowrap; }
+.registryGps .tinyBtn { margin-right: 4px; min-height: 30px; }
+.registryMissing { color: #89967e; font-size: 12px; }
+.registryEmpty { display: grid; justify-items: center; gap: 14px; padding: 40px 15px; text-align: center; color: #6e8066; }
+.registryEmpty strong { color: #3a5938; font-size: 15px; }
+.registryEmpty .btn { width: auto; }
+.v21Registry .tableFoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; font-size: 12px; }
+.v21Registry .tableFoot > div { display: flex; align-items: center; gap: 9px; }
+.v21Registry .tableFoot .btn { width: 36px; min-height: 36px; padding: 5px; margin: 0; }
+.v21Registry .tableFoot .btn:disabled, #downloadTable:disabled { opacity: .4; cursor: default; }
+.registrySrOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media(max-width:1100px) {
+  .registryFilters { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .registryFilters .registryReset { justify-self: start; }
+}
+@media(max-width:740px) {
+  .registryFilters { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 8px; }
+  .registryFilters .registryReset { align-self: end; }
+  .v21Registry .sectionHead h2 { font-size: 18px; }
+  .v21Registry .sectionHead #downloadTable { font-size: 11px; min-width: 0; padding: 9px; }
+  .registryFacetPanel { width: max(100%,230px); }
+  .registryFacet[data-registry-facet=species] .registryFacetPanel { right: 0; left: auto; }
+  .registrySearch input, .registryField select, .registryFacetPanel input { font-size: 16px; }
+  .registryField select { padding-left: 8px; }
+  .registryActiveFilters button { min-height: 36px; }
+}
+body.mobileMode .registryOrderRow { justify-content: space-between; flex-wrap: wrap; }
+body.mobileMode .registryMobileSort { display: flex; align-items: center; gap: 6px; width: 100%; }
+body.mobileMode .registryMobileSort label { white-space: nowrap; font-size: 12px; color: #61765b; }
+body.mobileMode .registryMobileSort select { flex: 1; font-size: 16px; }
+body.mobileMode .registryMobileSort .btn { width: 44px; min-height: 44px; font-size: 18px; padding: 5px; }
+body.mobileMode #registryOrder { display: none; }
+body.mobileMode .v21Registry .tableFoot { flex-wrap: wrap; }
+body.mobileMode .v21Registry .tableFoot > div { width: 100%; justify-content: space-between; gap: 5px; }
+.registryColumns { position: relative; }
+.registryColumns summary { cursor: pointer; list-style: none; padding: 7px 11px; background: #fffefb; border: 1px solid #d6e0cf; border-radius: 7px; font-size: 12px; color: #3d5f37; }
+.registryColumns summary::-webkit-details-marker { display: none; }
+.registryColumnsPanel { position: absolute; right: 0; top: calc(100% + 5px); width: 350px; max-width: calc(100vw - 48px); background: #fffefb; border: 1px solid #cfddc5; border-radius: 10px; box-shadow: 0 10px 28px #24432b24; z-index: 26; padding: 12px; }
+.registryColumnPresets { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.registryColumnPresets button { border: 0; background: #edf4e7; padding: 8px; border-radius: 5px; font-size: 12px; color: #395d32; }
+#registryColumnOptions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-height: 300px; overflow: auto; }
+#registryColumnOptions label { display: flex; gap: 6px; align-items: center; padding: 7px 2px; font-size: 12px; color: #4d6546; cursor: pointer; }
+#registryColumnOptions input { accent-color: #396846; margin: 0; }
+#overviewTable .registryActionsHead { padding: 12px; text-transform: uppercase; letter-spacing: .3px; color: #65765b; }
+#overviewTable td { max-width: 320px; }
+#overviewTable td[title] { min-width: 220px; white-space: normal; overflow-wrap: anywhere; }
+#overviewTable td.registryNumber { white-space: nowrap; }
+.registryActions .tinyBtn { min-height: 32px; background: #edf4e7; border-color: #ccddc2; color: #3e6135; }
+body.mobileMode .registryColumns { margin-left: auto; }
+/* Nella gestione l'elenco ha priorità sui riepiloghi, disponibili in Statistiche. */
+body:not(.mobileMode) #viewRiepilogo > .metricGrid { display: none; }
+body:not(.mobileMode) .workspace:has(#viewRiepilogo:not(.hidden)) > .workTop { padding: 14px 22px; margin-bottom: 12px; }
+body:not(.mobileMode) .workspace:has(#viewRiepilogo:not(.hidden)) > .workTop h1 { font-size: 25px; margin: 5px 0; }
+body:not(.mobileMode) #viewRiepilogo > .v2SectionActions { margin: 8px 0 12px; }

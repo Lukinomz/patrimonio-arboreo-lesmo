@@ -1,0 +1,13 @@
+#mapSelectionNotice {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 18;
+  width: max-content; max-width: min(480px,calc(100% - 32px)); padding: 14px 18px;
+  border-radius: 11px; background: #245c43; color: #fff; box-shadow: 0 6px 20px #14382330;
+  font-size: 14px; line-height: 1.5; text-align: center; pointer-events: none;
+}
+#mapSelectionCursor {
+  position: absolute; z-index: 18; padding: 8px 11px; border: 1px solid #cbdcc2; border-radius: 7px;
+  background: #fffefb; color: #284f31; box-shadow: 0 3px 12px #17362228; font-size: 12px;
+  font-weight: 650; white-space: nowrap; pointer-events: none;
+}
+#mapSelectionNotice[hidden], #mapSelectionCursor[hidden] { display: none; }
+body:not(.mobileMode) .hasMapSelectionNotice .modehint { bottom: 110px; }

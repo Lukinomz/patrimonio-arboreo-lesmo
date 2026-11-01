@@ -1211,6 +1211,12 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <link rel="stylesheet" href="visual-theme.css?v=9"/>
 <link rel="stylesheet" href="user-guide.css?v=1"/>
 <link rel="stylesheet" href="admin-ui.css?v=2"/>
+<link rel="stylesheet" href="registry-table.css?v=1"/>
+<script src="registry-table.js?v=1"></script>
+<link rel="stylesheet" href="map-selection.css?v=1"/>
+<script src="map-selection.js?v=1"></script>
+<link rel="stylesheet" href="statistics-dashboard.css?v=1"/>
+<script src="statistics-dashboard.js?v=1"></script>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
@@ -1251,9 +1257,18 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <div class="metric"><span>Critici</span><strong id="kCritical">0</strong><small>Richiedono attenzione</small></div>
 <div class="metric"><span>Fotografie</span><strong id="kPhotos">0</strong><small>Associate alle schede</small></div>
 </div>
-<div class="workCard v21Registry"><div class="sectionHead"><div><h2>Alberi registrati</h2><p>Ricerca, filtra e apri le schede con un clic</p></div><button class="btn" id="downloadTable" type="button">↓ Esporta CSV</button></div>
-<div class="tableFilters"><input aria-label="Cerca nel registro" id="overviewSearch" placeholder="Cerca per codice, specie, via, note…" type="search"/><select aria-label="Filtra per stato" id="overviewStatus"><option value="all">Tutti gli stati</option><option value="unknown">Non valutato</option><option value="ok">Sano</option><option value="sick">Malato</option><option value="watch">Da monitorare</option><option value="critical">Critico</option><option value="dead">Morto</option><option value="cut">Tagliato / abbattuto</option><option value="fallen">Caduto</option><option value="removed">Non presente (storico)</option></select><select aria-label="Filtra geolocalizzazione" id="overviewLocation"><option value="all">Tutte le posizioni</option><option value="geo">Con GPS</option><option value="nogeo">Senza GPS</option></select></div>
-<div class="v21SecondaryFilters"><select id="v21Species" aria-label="Filtra per specie"><option value="all">Tutte le specie</option></select><select id="v21Street" aria-label="Filtra per via"><option value="all">Tutte le vie</option></select><select id="v21PhotoFilter" aria-label="Filtra presenza fotografie"><option value="all">Con e senza foto</option><option value="with">Con foto</option><option value="without">Senza foto</option></select><select id="v21Sort" aria-label="Ordina elenco"><option value="code">Ordina per codice</option><option value="species">Specie A–Z</option><option value="address">Via A–Z</option><option value="modified">Ultima modifica</option></select><button class="btn v21Reset" id="v21ResetFilters" type="button">Azzera filtri</button></div><div class="tableOverflow" id="v21RegistryViewport"><table class="dataTable" id="overviewTable"><thead><tr><th>Identificativo</th><th>Specie</th><th>Via / località</th><th>Stato</th><th>GPS</th><th>Foto</th><th>Rilievi</th><th>Ultimo rilievo</th><th>Ultima modifica</th></tr></thead><tbody id="overviewRows"></tbody></table></div><div class="tableFoot"><span id="overviewCount">0 alberi</span><div><label class="v21PerPageLabel">Righe <select id="v21PageSize" aria-label="Righe per pagina"><option>25</option><option selected>50</option><option>100</option><option>250</option></select></label><button class="btn" id="prevPage" type="button">←</button><span id="pageInfo">Pagina 1</span><button class="btn" id="nextPage" type="button">→</button></div></div>
+<div class="workCard v21Registry"><div class="sectionHead"><div><h2>Alberi registrati</h2><p id="registrySummary" role="status" aria-live="polite"></p></div><button class="btn" id="downloadTable" type="button">↓ Esporta risultati</button></div>
+<div class="registrySearchRow"><label class="registrySearch"><span class="registryFieldLabel">Cerca nell’archivio</span><input id="overviewSearch" placeholder="Codice, specie, via o note…" type="search" autocomplete="off"/></label></div>
+<div class="registryFilters" role="group" aria-label="Filtri del registro">
+<label class="registryField"><span class="registryFieldLabel">Stato</span><select id="overviewStatus"><option value="all">Tutti gli stati</option><option value="attention">Da seguire</option><option value="unknown">Non valutato</option><option value="ok">Sano</option><option value="sick">Malato</option><option value="watch">Da monitorare</option><option value="critical">Critico</option><option value="dead">Morto</option><option value="cut">Tagliato / abbattuto</option><option value="fallen">Caduto</option><option value="removed">Non presente (storico)</option></select></label>
+<details class="registryFacet" data-registry-facet="species"><summary><span class="registryFieldLabel">Specie</span><span class="registryFacetValue">Tutte</span><span class="registryChevron" aria-hidden="true">⌄</span></summary><div class="registryFacetPanel"><input type="search" aria-label="Cerca tra le specie" placeholder="Cerca…" autocomplete="off"/><div class="registryFacetOptions" role="group" aria-label="Specie"></div></div></details><details class="registryFacet" data-registry-facet="address"><summary><span class="registryFieldLabel">Vie e località</span><span class="registryFacetValue">Tutte</span><span class="registryChevron" aria-hidden="true">⌄</span></summary><div class="registryFacetPanel"><input type="search" aria-label="Cerca tra le vie e località" placeholder="Cerca…" autocomplete="off"/><div class="registryFacetOptions" role="group" aria-label="Vie e località"></div></div></details>
+<label class="registryField"><span class="registryFieldLabel">Posizione</span><select id="overviewLocation"><option value="all">Tutte le posizioni</option><option value="geo">Con GPS</option><option value="nogeo">Senza GPS</option></select></label>
+<label class="registryField"><span class="registryFieldLabel">Fotografie</span><select id="v21PhotoFilter"><option value="all">Tutti gli alberi</option><option value="with">Con foto</option><option value="without">Senza foto</option></select></label>
+<button class="btn registryReset" id="v21ResetFilters" type="button">Azzera filtri</button>
+</div>
+<div id="registryActiveFilters" class="registryActiveFilters" aria-label="Filtri attivi" hidden></div>
+<div class="registryOrderRow"><span id="registryOrder"></span><details class="registryColumns"><summary id="registryColumnsCount">Colonne</summary><div class="registryColumnsPanel"><div class="registryColumnPresets"><button type="button" data-registry-columns="all">Mostra tutte</button><button type="button" data-registry-columns="default">Predefinite</button></div><div id="registryColumnOptions"></div></div></details><div class="registryMobileSort"><label for="v21Sort">Ordina per</label><select id="v21Sort"><option value="code">Identificativo</option><option value="species">Specie</option><option value="address">Via / località</option><option value="status">Stato</option><option value="gps">GPS</option><option value="photos">Foto</option><option value="surveys">Rilievi</option><option value="surveyDate">Ultimo rilievo</option><option value="modified">Ultima modifica</option></select><button type="button" class="btn" id="registrySortDirection" aria-label="Inverti ordinamento">↑</button></div></div>
+<div class="tableOverflow" id="v21RegistryViewport"><table class="dataTable" id="overviewTable"><caption class="registrySrOnly">Alberi registrati. Le intestazioni ordinano l’intero elenco.</caption><thead><tr><th scope="col" aria-sort="none"><button type="button" data-registry-sort="code">Identificativo<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="species">Specie<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="address">Via / località<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="status">Stato<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="gps">GPS<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="photos">Foto<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="surveys">Rilievi<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="surveyDate">Ultimo rilievo<span class="registrySortIcon" aria-hidden="true">↕</span></button></th><th scope="col" aria-sort="none"><button type="button" data-registry-sort="modified">Ultima modifica<span class="registrySortIcon" aria-hidden="true">↕</span></button></th></tr></thead><tbody id="overviewRows"></tbody></table></div><div class="tableFoot"><span id="overviewCount">0 alberi</span><div><label class="v21PerPageLabel">Righe <select id="v21PageSize" aria-label="Righe per pagina"><option>25</option><option selected>50</option><option>100</option><option>250</option></select></label><button class="btn" id="prevPage" type="button" aria-label="Pagina precedente">←</button><span id="pageInfo">Pagina 1</span><button class="btn" id="nextPage" type="button" aria-label="Pagina successiva">→</button></div></div>
 </div>
 </div><div class="workView hidden" id="viewCensimento">
 <div class="v2SectionActions v21SurveyBar"><button class="btn" id="v2CensusMap" type="button">⌖ Seleziona dalla mappa</button></div>
@@ -1658,14 +1673,15 @@ function streetViewURL(lat,lon){return 'https://www.google.com/maps/@?api=1&map_
 function openStreetView(lat,lon){if(!isValid({lat,lon})){tell('Per aprire Street View servono le coordinate GPS dell’albero.');return}
  const link=document.createElement('a');link.href=streetViewURL(lat,lon);link.target='_blank';link.rel='noopener noreferrer';document.body.appendChild(link);link.click();link.remove();}
 function updateStreetButton(){const latitude=$('lat').value.trim(),longitude=$('lon').value.trim();$('streetViewTree').disabled=!(latitude&&longitude&&isValid({lat:num(latitude),lon:num(longitude)}))}
-function stopMapAdd(){addMode=false;placingTreeId=null;$('cancelMapAdd').classList.add('hidden');updateHint();}
+function stopMapAdd(){clearMapSelectionInstruction();addMode=false;placingTreeId=null;$('cancelMapAdd').classList.add('hidden');updateHint();}
 function startAdd(){
  if(addMode){stopMapAdd();tell('Selezione annullata.');return}
  switchSection('mappa');showMap();addMode=true;
  $('cancelMapAdd').classList.remove('hidden');
  $('hintTitle').textContent='Seleziona un albero dalla mappa';
  $('hintSub').textContent='Inquadra l’albero, poi clicca o tocca il punto esatto sulla mappa per aprire la scheda.';
- tell('Ora seleziona un albero dalla mappa. Premi “Annulla selezione” per uscire.');
+ if(document.body.classList.contains('mobileMode'))tell('Ora seleziona un albero dalla mappa. Premi “Annulla selezione” per uscire.');
+ else showMapSelectionInstruction();
 }
 function showAddChoice(){
  $('addTreeChoice').classList.remove('hidden');
@@ -1964,15 +1980,7 @@ function renderDashboard(){
  for(const [id,key] of [['sHealthy','ok'],['sSick','sick'],['sWatchAlive','watch'],['sCriticalAlive','critical'],['sDead','dead'],['sCut','cut'],['sFallen','fallen'],['sUnknownState','unknown'],['sRemovedLegacy','removed']])n(id,trees.filter(t=>t.status===key).length);
  n('sAlive',livingCount);n('sRegistered',trees.length);
  n('sTotal',trees.length);n('sEvents',historyEvents.length);n('sWithPhotos',new Set(photos.filter(p=>!p.removed&&p.treeId).map(p=>p.treeId)).size);n('sSpecies',new Set(trees.map(t=>(t.species||'').trim().toLowerCase()).filter(x=>x&&x!=='non identificata')).size);
- const q=$('overviewSearch').value.toLocaleLowerCase('it-IT').trim(),f=$('overviewStatus').value,geo=$('overviewLocation').value;
- for(const [id,key,fallback,label] of [['v21Species','species','Non identificata','Tutte le specie'],['v21Street','address','Non indicata','Tutte le vie']]){
-  const el=$(id);if(!el)continue;const current=el.value;const distinct=[...new Set(trees.map(t=>t[key]||fallback))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));const token=id==='v21Species'?'specie':'via';
-  const signature=distinct.join('||');if(el.dataset.signature!==signature){el.innerHTML='<option value="all">'+label+'</option>'+distinct.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join('');el.value=distinct.includes(current)?current:'all';el.dataset.signature=signature;}}
- const pickSpecies=$('v21Species')?.value||'all',pickStreet=$('v21Street')?.value||'all',pickPhoto=$('v21PhotoFilter')?.value||'all',sortOrder=$('v21Sort')?.value||'code';
- const hits=trees.filter(t=>(f==='all'||t.status===f)&&(geo==='all'||(geo==='geo'?isValid(t):!isValid(t)))&&(pickSpecies==='all'||(t.species||'Non identificata')===pickSpecies)&&(pickStreet==='all'||(t.address||'Non indicata')===pickStreet)&&(pickPhoto==='all'||(pickPhoto==='with'?photoCount(t.id)>0:photoCount(t.id)===0))&&[publicCode(t),t.id,t.species,t.address,t.notes].join(' ').toLocaleLowerCase('it-IT').includes(q)).sort((a,b)=>sortOrder==='modified'?String(b.modified||b.created||'').localeCompare(String(a.modified||a.created||'')):String(sortOrder==='species'?(a.species||''):sortOrder==='address'?(a.address||''):publicCode(a)).localeCompare(String(sortOrder==='species'?(b.species||''):sortOrder==='address'?(b.address||''):publicCode(b)),'it',{numeric:true}));
- const maxPage=Math.max(1,Math.ceil(hits.length/perPage));overviewPage=Math.min(overviewPage,maxPage-1);const visible=hits.slice(overviewPage*perPage,(overviewPage+1)*perPage);
- $('overviewRows').innerHTML=visible.map(t=>`<tr><td><button class="codeLink" data-tree="${esc(t.id)}">${esc(publicCode(t))}</button></td><td>${esc(t.species||'Non identificata')}</td><td>${esc(t.address||'—')}</td><td>${statusChip(t)}</td><td>${isValid(t)?`<button class="tinyBtn" data-goto="${esc(t.id)}">⌖ Apri</button> <button class="tinyBtn" data-street="${esc(t.id)}" title="Apri Google Street View vicino all’albero">SV ↗</button>`:'<span style="color:#9aa69c">Da indicare</span>'}</td><td>${photoCount(t.id)}</td><td>${surveyCount(t.id)}</td><td>${esc(lastSurveyDate(t)||'—')}</td><td>${esc((t.modified||t.created||'').slice(0,10)||'—')}</td></tr>`).join('')||noRows(9,'Nessun albero trovato. Premi “Aggiungi nuovo albero” per creare una scheda.');
- $('overviewCount').textContent=hits.length.toLocaleString('it-IT')+' alberi trovati';$('pageInfo').textContent=`Pagina ${overviewPage+1} / ${maxPage}`;$('prevPage').disabled=overviewPage===0;$('nextPage').disabled=overviewPage>=maxPage-1;
+ renderRegistryTable();
  const mq=$('monitorSearch').value.toLocaleLowerCase('it-IT').trim(),mf=$('monitorFilter').value;
  const attention=t=>t.status==='sick'||t.status==='watch'||t.status==='critical'||late(t);
  const priority=t=>t.status==='critical'?0:t.status==='sick'?1:late(t)?2:t.status==='watch'?3:t.status==='unknown'?4:t.status==='ok'?5:6;
@@ -2173,9 +2181,8 @@ function init(){
  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchSection(b.dataset.view)));
  $('folderWork').onclick=$('connectFromArchive').onclick=chooseArchive;
  $('backupFromWork').onclick=expJSON;$('restoreFromWork').onclick=()=>$('jsonFile').click();
- $('csvFromWork').onclick=$('downloadTable').onclick=expCSV;$('geoFromWork').onclick=expGeo;$('importCsvWork').onclick=()=>$('csvFile').click();
- $('overviewSearch').oninput=()=>{overviewPage=0;renderDashboard()};$('overviewStatus').onchange=$('overviewLocation').onchange=()=>{overviewPage=0;renderDashboard()};
- $('prevPage').onclick=()=>{overviewPage=Math.max(0,overviewPage-1);renderDashboard()};$('nextPage').onclick=()=>{overviewPage++;renderDashboard()};
+ $('csvFromWork').onclick=expCSV;$('downloadTable').onclick=exportRegistryResults;$('geoFromWork').onclick=expGeo;$('importCsvWork').onclick=()=>$('csvFile').click();
+ $('prevPage').onclick=()=>{overviewPage=Math.max(0,overviewPage-1);$('v21RegistryViewport').scrollTop=0;renderDashboard()};$('nextPage').onclick=()=>{overviewPage++;$('v21RegistryViewport').scrollTop=0;renderDashboard()};
  $('monitorSearch').oninput=$('monitorFilter').onchange=renderDashboard;
  $('workspace').addEventListener('click',e=>{const b=e.target.closest('[data-tree],[data-goto],[data-street]');if(!b)return;if(b.dataset.street){const t=trees.find(x=>x.id===b.dataset.street);if(t&&isValid(t))openStreetView(+t.lat,+t.lon);return}if(b.dataset.goto)goToTree(b.dataset.goto);else openTree(b.dataset.tree)});
   $('toggleHistoricalSurvey').onclick=()=>showHistoricForm($('historicalSurveyForm').classList.contains('hidden'));
@@ -2242,6 +2249,7 @@ function renderLife(){
  const treeById=new Map(trees.map(t=>[t.id,t]));
  $('lifeEventRows').innerHTML=d.events.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(e=>{const t=treeById.get(e.treeId),snap=e.snapshot||{};return `<tr><td>${esc(e.date)}</td><td><button type="button" class="codeLink" data-tree="${esc(e.treeId)}">${esc(publicCode(t))}</button></td><td>${esc(LIFE_NAMES[e.type])}</td><td>${esc(snap.species||t?.species||'—')}</td><td>${esc(snap.address||t?.address||'—')}</td></tr>`}).join('')||noRows(5,'Nessun evento di piantumazione o perdita nell’anno.');
  $('lifeTotalInfo').textContent=lifeValidEvents().length+' movimenti distinti complessivi · '+d.events.length+' nell’anno selezionato.';
+ renderStatisticsDashboard();
  const dl=$('lifeCodes');if(dl)dl.innerHTML=trees.map(t=>`<option value="${esc(publicCode(t))}">${esc(t.species||'')} · ${esc(t.address||'')}</option>`).join('');
 }
 async function registerLifeEvent(){
@@ -2577,6 +2585,7 @@ function v2Warn(msg){tell(msg);return false}
 function v2ClearCodeError(){v2D('v2AnaCode').removeAttribute('aria-invalid');v2D('v2AnaCodeError').hidden=true;v2D('v2AnaCodeError').textContent=''}
 function v2CodeWarning(message){v2D('v2AnaCodeError').textContent=message;v2D('v2AnaCodeError').hidden=false;v2D('v2AnaCode').setAttribute('aria-invalid','true');v2D('v2AnaCode').focus();return false}
 function v2OpenAnag(t=null,latitude,longitude){
+ clearMapSelectionInstruction();
  v2CloseDetail();v2AnagId=t?.id||null;const suggested=nextPublicCode();v2ClearCodeError();
  const fromMap=v2AnaMapDraft&&((t?.id||null)===v2AnaMapDraft.id)&&latitude!==undefined&&longitude!==undefined;
  if(!fromMap){v2ClearAnaPhotos();v2AnaMapDraft=null;v2D('v2AnaPhotoDate').value='';}
@@ -2752,7 +2761,7 @@ document.addEventListener('DOMContentLoaded',v2RegisterUI);
 'use strict';
 // V2.1 workflow & security layer. Compatible with schema-4 alberi.json.
 function v21OriginToggle(){const isPlant=v2D('v21Origin').value==='planted';v2D('v21PlantDateWrap').classList.toggle('hidden',!isPlant);v2D('v21PlantDate').required=isPlant&&!v2AnagId;}
-function v21ResetFilterUI(){for(const id of ['overviewStatus','overviewLocation','v21Species','v21Street','v21PhotoFilter']){const el=v2D(id);if(el)el.value='all'}v2D('v21Sort').value='code';v2D('overviewSearch').value='';overviewPage=0;renderDashboard()}
+function v21ResetFilterUI(){resetRegistryFilters()}
 function v21SetupViews(){
  // Events are a subtype of the same ongoing recording workflow, not a separate top-level section.
  const monitor=v2D('viewMonitoraggio'),census=v2D('viewCensimento');
@@ -2761,7 +2770,6 @@ function v21SetupViews(){
  // Leave all existing tools, tables, history, search, backup, and photos accessible.
  v2D('v21Origin').addEventListener('change',v21OriginToggle);
  v2D('v21PageSize').addEventListener('change',()=>{perPage=Number(v2D('v21PageSize').value)||50;overviewPage=0;renderDashboard()});
- for(const id of ['v21Species','v21Street','v21PhotoFilter','v21Sort'])v2D(id).addEventListener('change',()=>{overviewPage=0;renderDashboard()});
  v2D('v21ResetFilters').addEventListener('click',v21ResetFilterUI);
  v2D('v2MonitorMap').textContent='⌖ Seleziona dalla mappa';
  v2D('v2DetailEvent').textContent='Nuova rilevazione / evento';

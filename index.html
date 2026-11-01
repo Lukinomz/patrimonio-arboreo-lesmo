@@ -1208,7 +1208,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 .adminNotice{padding:12px;border-radius:10px;background:#fff8e8;border:1px solid #f0e0b5;font-size:12px;line-height:1.5;color:#765a25}
 @media(max-width:600px){.adminGrid{grid-template-columns:1fr}.adminDialog{padding:15px}.adminEntry{font-size:11px!important}}
 </style><link rel="stylesheet" href="drive-storage.css?v=3"/>
-<link rel="stylesheet" href="visual-theme.css?v=5"/>
+<link rel="stylesheet" href="visual-theme.css?v=6"/>
 <link rel="stylesheet" href="user-guide.css?v=1"/>
 <link rel="stylesheet" href="admin-ui.css?v=2"/>
 </head><body>
@@ -3137,7 +3137,10 @@ function mAddPanel(){
  }
  const map=mById('map');if(map&&!mById('mMapGPS')){
   const el=document.createElement('div');el.className='mGeoPanel';el.innerHTML='<button type="button" id="mMapGPS">◎ La mia posizione</button><button type="button" id="mMapNewHere" disabled>＋ Albero qui</button><span class="mGeoInfo" id="mGeoInfo"></span>';
-  map.appendChild(el);mById('mMapGPS').onclick=()=>mAcquireGPS('map');mById('mMapNewHere').onclick=()=>{if(!mGpsPoint)return;v2OpenAnag(null,mGpsPoint.lat.toFixed(7),mGpsPoint.lon.toFixed(7));};
+  const tools=document.createElement('div');tools.className='mMapTools';
+  map.closest('.stage').appendChild(tools);
+  tools.append(mById('placeForm'),el,mById('mapStatusFilters'));
+  mById('mMapGPS').onclick=()=>mAcquireGPS('map');mById('mMapNewHere').onclick=()=>{if(!mGpsPoint)return;v2OpenAnag(null,mGpsPoint.lat.toFixed(7),mGpsPoint.lon.toFixed(7));};
   el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('pointerup',e=>e.stopPropagation());el.addEventListener('click',e=>e.stopPropagation());
  }
  const archive=mById('viewArchivio');if(archive&&!mById('mArchiveTools')){

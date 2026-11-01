@@ -403,3 +403,55 @@ body.mobileMode .v2Overlay { align-items: flex-start; }
 @media (prefers-reduced-motion: reduce) {
   .btn, .navChoice, .mTreeCard { transition: none; }
 }
+
+/* Comandi mobili in un'unica colonna: nessuna sovrapposizione sulla mappa. */
+body.mobileMode .header {
+  height: 52px;
+  padding: 4px 8px;
+  gap: 6px;
+}
+body.mobileMode .header::after { display: none; }
+body.mobileMode .header .brand { flex: 1; gap: 6px; overflow: hidden; }
+body.mobileMode .header .brand .logo {
+  width: 28px; height: 28px; flex-basis: 28px; border-radius: 8px;
+}
+body.mobileMode .header .brand .name {
+  font-size: 12px; line-height: 1.2; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+body.mobileMode .headerActions { flex-shrink: 0; gap: 4px; align-items: center; }
+body.mobileMode .headerActions .btn {
+  min-height: 44px; height: 44px; padding: 5px 7px; font-size: 11px;
+  white-space: nowrap;
+}
+body.mobileMode .headerActions .mapSelect { min-width: 90px; max-width: 96px; }
+body.mobileMode .modehint { display: none; }
+body.mobileMode .modehint:has(#cancelMapAdd:not(.hidden)) {
+  display: block; top: auto; bottom: 60px; left: 8px;
+  max-width: calc(100% - 72px); padding: 0;
+}
+body.mobileMode .modehint :is(#hintTitle, #hintSub) { display: none; }
+body.mobileMode .mMapTools {
+  position: absolute; z-index: 15; top: 8px; left: 8px;
+  width: calc(100% - 72px); max-width: 330px;
+  display: grid; gap: 8px;
+}
+body.mobileMode .mMapTools .searchPlace,
+body.mobileMode .mMapTools .mGeoPanel,
+body.mobileMode .mMapTools .mapStatusFilters {
+  position: static; width: 100%; max-width: none; margin: 0;
+}
+body.mobileMode .mMapTools .searchPlace input { width: 0; font-size: 16px; }
+body.mobileMode .mMapTools .searchPlace button { min-height: 44px; }
+body.mobileMode .mMapTools .mGeoPanel { display: flex; flex-wrap: wrap; gap: 6px; }
+body.mobileMode .mMapTools .mGeoPanel button {
+  flex: 1 1 auto; min-width: 0; padding: 9px 7px; font-size: 11px;
+}
+body.mobileMode .mMapTools .mGeoInfo { max-width: 100%; }
+body.mobileMode .mapStatusFilters summary { flex-wrap: wrap; }
+body.mobileMode #mapFilterDetails { max-height: 35dvh; }
+body.mobileMode .mapBtns { top: 8px; right: 8px; width: 44px; gap: 8px; }
+body.mobileMode .mapBtns .mapSv {
+  width: 44px; height: 44px; min-height: 44px; font-size: 0;
+}
+body.mobileMode .mapBtns .mapSv::after { content: 'SV ↗'; font-size: 11px; }

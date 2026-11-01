@@ -77,6 +77,27 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   color: #617466;
 }
 .mainNav .navChoice:hover { background: #f4f2e8; color: #254f35; }
+/* Tab desktop più leggibili, senza cambiare la navigazione mobile. */
+@media (min-width: 741px) {
+  .mainNav .navChoice {
+    min-height: 60px;
+    padding: 14px 20px;
+    gap: 10px;
+    font-size: 16px;
+    line-height: 1.25;
+    flex-shrink: 0;
+  }
+  .mainNav .navChoice .navIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    font-size: 24px;
+    line-height: 1;
+    top: 0;
+    flex-shrink: 0;
+  }
+}
 .mainNav .navChoice.active {
   color: #24583a;
   border: 1px solid #d6e4cf;

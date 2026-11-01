@@ -1,0 +1,51 @@
+/* Istruzioni per l'uso quotidiano, leggibili anche da telefono. */
+body.guideOpen #workFolderReminder, body.guideOpen #mArchiveBanner, body.guideOpen #openDrive, body.guideOpen #folderWork { display: none !important; }
+body.mobileMode .mFieldNav { grid-template-columns: repeat(6,minmax(0,1fr)); }
+body.mobileMode .mFieldNav button { min-height: 56px; }
+body.mobileMode .mFieldNav button small { font-size: 11px; }
+.guideIntro { padding: 24px; border: 1px solid #d9e3cd; border-radius: 17px; background: #fffefb; margin-bottom: 17px; }
+.guideIntro h2 { font-size: 25px; letter-spacing: -.6px; color: #2d563b; margin: 0 0 10px; }
+.guideIntro > p { font-size: 14px; line-height: 1.65; color: #607858; max-width: 780px; margin: 0; }
+.guideQuickStart { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 21px; }
+.guideQuickStart > div { border-radius: 12px; padding: 16px; background: #f0f4e7; }
+.guideQuickStart small { display: block; font-size: 11px; color: #849575; margin-bottom: 6px; }
+.guideQuickStart strong { color: #3d633f; font-size: 14px; }
+.guideQuickStart p { font-size: 13px; line-height: 1.6; color: #687e5e; margin: 7px 0 0; }
+.guideLayout { display: grid; grid-template-columns: 235px minmax(0,1fr); gap: 20px; align-items: start; }
+.guideContents { position: sticky; top: 0; padding: 17px; border: 1px solid #dce5d2; border-radius: 13px; background: #fffefb; }
+.guideContents h3 { margin: 0 0 10px; font-size: 14px; color: #496c44; }
+.guideContents button { display: block; text-align: left; width: 100%; border: 0; border-radius: 8px; background: transparent; padding: 12px 9px; min-height: 44px; color: #647b59; font-size: 13px; line-height: 1.4; }
+.guideContents button:hover { background: #edf3e5; color: #355c3a; }
+.guideArticles { min-width: 0; }
+.guideArticle { padding: 23px; background: #fffefb; border: 1px solid #dce5d1; border-radius: 14px; margin-bottom: 15px; scroll-margin-top: 16px; }
+.guideArticle h3 { font-size: 19px; color: #365c3c; letter-spacing: -.3px; margin: 0 0 15px; line-height: 1.4; }
+.guideArticle p, .guideArticle li { font-size: 14px; line-height: 1.75; color: #5d7357; }
+.guideArticle ol, .guideArticle ul { padding-left: 22px; margin: 0; }
+.guideArticle li { padding-left: 3px; margin-bottom: 9px; }
+.guideArticle strong { color: #3b5c3b; }
+.guideNote { background: #f0f4e9; padding: 13px 15px; border-radius: 10px; margin: 16px 0 0; }
+.guideExample { background: #f9f1df; padding: 13px 15px; border: 1px solid #ede0c3; border-radius: 10px; margin: 15px 0 0; }
+.guideArticle .btn { margin-top: 17px; min-height: 44px; }
+.guideArticle details { margin-top: 11px; border-top: 1px solid #e4eadc; padding-top: 7px; }
+.guideArticle summary { cursor: pointer; min-height: 44px; padding: 11px 0; color: #4e6d45; font-size: 14px; font-weight: 650; line-height: 1.55; }
+.guideArticle details p { margin: 5px 0 12px; }
+@media (max-width:950px) {
+  .guideLayout { grid-template-columns: 1fr; gap: 16px; }
+  .guideContents { position: static; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px 10px; }
+  .guideContents h3 { grid-column: 1 / -1; }
+}
+@media (max-width:600px) {
+  .guideIntro { padding: 19px 15px; }
+  .guideIntro h2 { font-size: 23px; }
+  .guideIntro > p { font-size: 13px; }
+  .guideQuickStart { grid-template-columns: 1fr; gap: 8px; margin-top: 16px; }
+  .guideQuickStart > div { padding: 12px 14px; }
+  .guideQuickStart small { margin-bottom: 4px; }
+  .guideQuickStart p { margin-top: 4px; }
+  .guideContents { padding: 14px 11px; gap: 4px; }
+  .guideContents button { font-size: 12px; padding: 11px 7px; }
+  .guideArticle { padding: 19px 15px; scroll-margin-top: 10px; }
+  .guideArticle h3 { font-size: 18px; }
+  .guideArticle p, .guideArticle li { font-size: 14px; }
+  .guideArticle .btn { width: 100%; }
+}

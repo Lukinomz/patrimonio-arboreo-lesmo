@@ -471,3 +471,20 @@ body.mobileMode #mFieldNav button small {
   font-size: clamp(9px, 2.4vw, 11px);
   letter-spacing: -.25px;
 }
+
+body.mobileMode .mGeoPanel #mMapNewHere {
+  background: #dcecd2;
+  color: #315d38;
+  border-color: #b9d2a9;
+  opacity: 1;
+}
+body.mobileMode .mGeoPanel #mMapNewHere:disabled {
+  background: #edf3e7;
+  color: #65765c;
+  border-color: #d4e0c9;
+  cursor: default;
+  box-shadow: none;
+}
+body.mobileMode .mGeoPanel #mMapNewHere:not(:disabled):hover {
+  background: #cfe3c2;
+}

@@ -106,11 +106,12 @@ def main():
                 page.locator('#adminOpen').click()
                 page.locator('#adminPassword').fill(ADMIN)
                 page.locator('#adminLoginButton').click()
-                page.locator('#adminTreeSearch').wait_for(state='visible')
+                page.locator('#adminTreeSelect').wait_for(state='visible')
+                assert not page.locator('#adminDeleteBulkDetails').evaluate('e => e.open')
                 assert page.locator('#adminPassword').input_value() == ''
 
             def pick(page, ident):
-                page.locator('[data-admin-tree="' + ident + '"]').check()
+                page.locator('#adminTreeSelect').select_option(ident)
 
             def delete(page, double=False):
                 page.dialogs.clear()
@@ -163,6 +164,12 @@ def main():
             assert page.locator('#adminLoginError').is_visible() and page.locator('#adminContent').is_hidden()
             page.locator('#adminPassword').fill(ADMIN)
             page.locator('#adminLoginButton').click()
+            assert not page.locator('#adminDeleteBulkDetails').evaluate('e => e.open')
+            assert page.locator('.adminDialog').bounding_box()['width'] <= 690
+            first, second = page.locator('.adminGrid > .adminTile').nth(0).bounding_box(), page.locator('.adminGrid > .adminTile').nth(1).bounding_box()
+            assert abs(first['y'] - second['y']) < 1 and second['x'] > first['x']
+            assert page.locator('#adminDeleteReason').is_visible() and page.locator('#adminDeleteNote').is_visible()
+            page.screenshot(path=str(ARTIFACTS / 'admin-restored-desktop.png'), full_page=False)
             pick(page, 'LES-000001')
             before = rpc('load')['data']
             page.cancel_next = True
@@ -188,6 +195,7 @@ def main():
             assert rpc('photoGet', path=seed['photos'][0]['relativePath'])['result']['base64'] == PNG
             print('PASS: password solo all’ingresso, annullamento senza scritture, cancellazione e ripristino con una conferma e foto/storico conservati')
 
+            page.locator('#adminDeleteBulkDetails > summary').click()
             page.locator('#adminTreeSearch').fill('Roma')
             page.locator('#adminSelectAll').check()
             assert page.locator('#adminSelectionCount').inner_text() == '2 alberi selezionati'
@@ -279,6 +287,8 @@ def main():
             print('PASS: risposta di rete persa conserva una copia recuperabile; uscire da Admin richiede un nuovo accesso')
             mobile = new_page('iPhone 13')
             open_admin(mobile)
+            mobile.screenshot(path=str(ARTIFACTS / 'admin-restored-iphone.png'), full_page=False)
+            mobile.locator('#adminDeleteBulkDetails > summary').click()
             mobile.locator('[data-admin-tree]').nth(0).check()
             mobile.locator('[data-admin-tree]').nth(1).check()
             assert mobile.locator('#adminSelectionCount').inner_text() == '2 alberi selezionati'

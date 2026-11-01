@@ -28,14 +28,17 @@
     $('adminSelectAll').indeterminate = selectedMatches > 0 && selectedMatches < matches.length;
     $('adminSelectAll').disabled = busy || !matches.length;
     $('adminSelectAllText').textContent = 'Seleziona tutti i risultati (' + matches.length + ')';
+    $('adminTreeSelect').value = selection.size === 1 ? [...selection][0] : '';
     $('adminSelectionCount').textContent = selection.size ? selection.size + (selection.size === 1 ? ' albero selezionato' : ' alberi selezionati') : 'Nessun albero selezionato';
-    $('adminDeleteTree').textContent = 'Elimina selezionati' + (selection.size ? ' (' + selection.size + ')' : '');
+    $('adminSelectionCount').hidden = selection.size < 2;
+    $('adminDeleteTree').textContent = selection.size > 1 ? 'Rimuovi ' + selection.size + ' alberi per errore' : 'Rimuovi albero per errore';
     $('adminDeleteTree').disabled = busy || !logged || !selection.size || !folderHandle;
     $('adminClearSelection').disabled = busy || !selection.size;
     for (const input of $('adminTreeList').querySelectorAll('[data-admin-tree]')) input.checked = selection.has(input.dataset.adminTree);
   }
   function renderTrees() {
     const matches = matchingTrees();
+    $('adminTreeSelect').innerHTML = '<option value="">Seleziona un albero</option>' + trees.map(tree => `<option value="${escape(tree.id)}">${escape(publicCode(tree))} · ${escape(tree.species || 'Specie non indicata')}</option>`).join('');
     $('adminTreeList').innerHTML = matches.slice(0, limit).map(tree => `<label class="adminTreeRow"><input type="checkbox" data-admin-tree="${escape(tree.id)}" ${selection.has(tree.id) ? 'checked' : ''} ${busy ? 'disabled' : ''}><span><b>${escape(publicCode(tree))} · ${escape(tree.species || 'Specie non indicata')}</b><em>${escape(tree.address || 'Località non indicata')}</em></span></label>`).join('') || '<p class="adminEmpty">' + (trees.length ? 'Nessun albero corrisponde alla ricerca.' : 'Non ci sono alberi nell’archivio.') + '</p>';
     $('adminShowMore').hidden = matches.length <= limit;
     $('adminShowMore').textContent = 'Mostra altri alberi (' + Math.min(matches.length, limit) + ' di ' + matches.length + ' visibili)';
@@ -45,7 +48,7 @@
     const trash = read(trashKey);
     $('adminTrashList').innerHTML = trash.map((entry, index) => {
       if (!isTree(entry?.tree)) return '<p class="adminLead">Una voce del cestino non è leggibile. La copia resta conservata.</p>';
-      return `<div class="adminRecord"><b>${escape(publicCode(entry.tree))} · ${escape(entry.tree.species || 'Specie non indicata')}</b><small>${escape(entry.pending ? 'Salvataggio da verificare · ' : '')}${escape(entry.when ? new Date(entry.when).toLocaleString('it-IT') : 'Data non disponibile')}</small><button type="button" class="btn muted" data-restore="${escape(entry.trashId || 'legacy-' + index)}" data-restore-tree="${escape(entry.tree.id)}" ${busy ? 'disabled' : ''}>Ripristina albero</button></div>`;
+      return `<div class="adminRecord"><b>${escape(publicCode(entry.tree))}</b><small>${escape(entry.pending ? 'Salvataggio da verificare · ' : '')}${escape(entry.reason || '')} · ${escape(entry.when ? new Date(entry.when).toLocaleString('it-IT') : 'Data non disponibile')}</small><button type="button" class="btn muted" data-restore="${escape(entry.trashId || 'legacy-' + index)}" data-restore-tree="${escape(entry.tree.id)}" ${busy ? 'disabled' : ''}>Ripristina</button></div>`;
     }).join('') || '<p class="adminLead">Il cestino è vuoto.</p>';
     try {
       $('adminAuditList').innerHTML = read(auditKey).slice(-20).reverse().map(entry => `<div class="adminRecord"><b>${escape(entry?.action)} · ${escape(entry?.id)}</b><small>${escape(entry?.when ? new Date(entry.when).toLocaleString('it-IT') : '')}</small></div>`).join('') || '<p class="adminLead">Nessuna correzione registrata.</p>';
@@ -58,7 +61,7 @@
   }
   function setBusy(value) {
     busy = value;
-    for (const control of $('adminContent').querySelectorAll('input,button')) control.disabled = value;
+    for (const control of $('adminContent').querySelectorAll('input,select,textarea,button')) control.disabled = value;
     $('adminClose').disabled = value;
     updateSelection();
   }
@@ -67,6 +70,7 @@
     $('adminContent').classList.add('hidden'); $('adminLogin').classList.remove('hidden');
     $('adminPassword').value = ''; $('adminLoginError').classList.add('hidden');
     $('adminTreeSearch').value = ''; limit = 100; message();
+    $('adminDeleteBulkDetails').open = false; $('adminDeleteReason').value = ''; $('adminDeleteNote').value = '';
   }
   function hide() {
     if (busy) return;
@@ -83,7 +87,7 @@
   function audit(action, entries) {
     try {
       const log = read(auditKey);
-      write(auditKey, log.concat(entries.map(entry => ({action, id: publicCode(entry.tree), reason: entry.reason || '', when: new Date().toISOString()}))));
+      write(auditKey, log.concat(entries.map(entry => ({action, id: publicCode(entry.tree), reason: [entry.reason, entry.note].filter(Boolean).join(' · '), when: new Date().toISOString()}))));
     } catch (_) { /* L'errore di un registro locale non annulla un salvataggio già confermato. */ }
   }
 
@@ -102,7 +106,8 @@
       const oldTrash = read(trashKey), ids = new Set(candidates.map(tree => tree.id));
       batchId = uniqueID();
       const when = new Date().toISOString();
-      const entries = candidates.map(tree => ({trashId: uniqueID(), batchId, pending: true, tree: clone(tree), history: clone(historyEvents.filter(event => event.treeId === tree.id)), photos: clone(photos.filter(photo => photo.treeId === tree.id)), reason: 'Eliminazione dall’area amministratore', note: '', when}));
+      const reason = $('adminDeleteReason').value || 'Eliminazione dall’area amministratore', note = $('adminDeleteNote').value.trim();
+      const entries = candidates.map(tree => ({trashId: uniqueID(), batchId, pending: true, tree: clone(tree), history: clone(historyEvents.filter(event => event.treeId === tree.id)), photos: clone(photos.filter(photo => photo.treeId === tree.id)), reason, note, when}));
       write(trashKey, oldTrash.concat(entries)); staged = true;
       previous = rememberState();
       trees = trees.filter(tree => !ids.has(tree.id));
@@ -113,6 +118,7 @@
         write(trashKey, read(trashKey).map(entry => { if (entry.batchId !== batchId) return entry; const {pending, ...saved} = entry; return saved; }));
       } catch (_) { /* La copia preparata resta recuperabile anche se non si può aggiornare l'etichetta. */ }
       audit('Eliminato', entries); selection.clear(); refresh(); render();
+      $('adminDeleteReason').value = ''; $('adminDeleteNote').value = '';
       message(candidates.length === 1 ? 'Albero eliminato. Puoi recuperarlo dal cestino.' : candidates.length + ' alberi eliminati. Puoi recuperarli dal cestino.');
     } catch (error) {
       if (!committed && previous) restoreState(previous);
@@ -164,7 +170,7 @@
     if (!overlay.classList.contains('open')) return;
     if (event.key === 'Escape') { event.preventDefault(); hide(); }
     if (event.key === 'Tab') {
-      const controls = [...overlay.querySelectorAll('button,input,a[href]')].filter(control => !control.disabled && control.getClientRects().length);
+      const controls = [...overlay.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(control => !control.disabled && control.getClientRects().length);
       const first = controls[0], last = controls.at(-1);
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -173,11 +179,12 @@
   $('adminLoginButton').onclick = () => {
     if ($('adminPassword').value !== 'Albereto71') { $('adminLoginError').classList.remove('hidden'); return; }
     logged = true; $('adminPassword').value = ''; $('adminLogin').classList.add('hidden'); $('adminContent').classList.remove('hidden');
-    render(); $('adminTreeSearch').focus();
+    render(); $('adminTreeSelect').focus();
   };
   $('adminPassword').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); $('adminLoginButton').click(); } });
   $('adminLogout').onclick = () => { if (!busy) { lock(); $('adminPassword').focus(); } };
   $('adminTreeSearch').oninput = () => { limit = 100; renderTrees(); };
+  $('adminTreeSelect').onchange = event => { selection.clear(); if (event.target.value) selection.add(event.target.value); updateSelection(); };
   $('adminTreeList').onchange = event => { const id = event.target.dataset.adminTree; if (!id) return; if (event.target.checked) selection.add(id); else selection.delete(id); updateSelection(); };
   $('adminSelectAll').onchange = event => { for (const tree of matchingTrees()) { if (event.target.checked) selection.add(tree.id); else selection.delete(tree.id); } updateSelection(); };
   $('adminClearSelection').onclick = () => { selection.clear(); updateSelection(); };

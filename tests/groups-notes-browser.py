@@ -34,7 +34,7 @@ def main():
     try:
         assert service.stdout.readline().strip()=='Drive test runtime ready'
         original='Primo rilievo: cipresso vicino al cancello.\nPresenza di edera.'
-        seed={'schema':4,'nextId':2,'trees':[{'id':'LES-000001','code':'LESMO-A0001','species':'Cipresso','status':'ok','notes':'Nota più recente','date':'2026-10-20','lat':None,'lon':None}],
+        seed={'schema':4,'nextId':2,'trees':[{'id':'LES-000001','code':'LESMO-A0001','species':'Cipresso','status':'ok','notes':'Nota più recente','crownDiameter':7.5,'siteType':'parco','nextCheck':'2026-12-20','date':'2026-10-20','lat':None,'lon':None}],
               'history':[{'id':'first','treeId':'LES-000001','type':'censimento','date':'2026-10-10','description':original,'snapshot':{'notes':original}},
                          {'id':'later','treeId':'LES-000001','type':'rilievo','date':'2026-10-20','description':'Nota più recente'}],'photos':[]}
         assert rpc('save',revision='empty',data=seed)['ok']
@@ -65,6 +65,11 @@ def main():
                     raise
             def manual():
                 page.locator('#manualHeader').click();page.locator('#chooseManualTree').click()
+            page.locator('#overviewRows [data-tree="LES-000001"]').click()
+            metrics=page.locator('#v2DetailContent .v2DetailCell').evaluate_all('cells=>Object.fromEntries(cells.map(c=>[c.querySelector("small").textContent,c.querySelector("b").textContent]))')
+            assert metrics['Contesto']=='Parco o area verde' and metrics['Diametro chioma']=='7,5 m'
+            assert 'Eventi' not in metrics and metrics['Prossima verifica']=='2026-12-20'
+            page.locator('#v2DetailClose').click()
             page.locator('[data-registry-edit="LES-000001"]').click()
             assert page.locator('#v21InitialNotes').is_visible()
             assert page.locator('#v21InitialNotes').input_value()==original
@@ -79,7 +84,7 @@ def main():
 
             # Gruppo di 50: bozze conservate andando sulla mappa, forma chiusa e codice unico.
             manual();page.locator('#v2AnaSpecies').fill('Cipressini');page.locator('#groupRecordType').select_option('group')
-            page.locator('#groupTreeCount').fill('50');page.locator('#v21InitialNotes').fill('Filare di 50 cipressini lungo il confine.')
+            page.locator('#groupTreeCount').fill('50');page.locator('#v2AnaSite').select_option('parco');page.locator('#v21InitialCrown').fill('7,5');page.locator('#v21InitialNotes').fill('Filare di 50 cipressini lungo il confine.')
             code=page.locator('#v2AnaCode').input_value()
             page.locator('#v2AnaPhotoFiles').set_input_files({'name':'gruppo.png','mimeType':'image/png','buffer':base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==')})
             page.locator('#groupDrawArea').click()
@@ -98,6 +103,11 @@ def main():
             assert sum(p['treeId']==group['id'] for p in data()['photos'])==1
             page.locator('.mainNav [data-view="mappa"]').click()
             page.locator('#groupAreas [data-group-id]').wait_for(state='visible')
+            page.evaluate('(id)=>mapPopupDetail(trees.find(t=>t.id===id))',group['id'])
+            map_metrics=page.locator('#treeMapCard .mapCardCell').evaluate_all('cells=>Object.fromEntries(cells.map(c=>[c.querySelector("small").textContent,c.querySelector("b").textContent]))')
+            assert map_metrics['Contesto']=='Parco o area verde' and map_metrics['Diametro chioma']=='7,5 m'
+            assert 'Eventi registrati' not in map_metrics
+            page.evaluate('hideTreeCard()')
             page.screenshot(path=str(ARTIFACTS/'group-area-desktop.png'))
             with page.expect_download() as download:page.evaluate('expGeo()')
             exported=json.loads(pathlib.Path(download.value.path()).read_text())
@@ -125,6 +135,8 @@ def main():
             page.locator('#groupStemCount').fill('');page.locator('#groupStemCount').fill('3');assert page.locator('#groupStemInputs input').count()==3
             assert page.locator('#groupStemInputs input').nth(0).input_value()=='30'
             page.locator('#groupStemInputs input').nth(2).fill('12,5')
+            assert page.locator('#groupStemResult').inner_text()=='Diametro equivalente: 51,5 cm'
+            assert page.locator('#v21InitialDiameter').input_value()=='51,5'
             page.screenshot(path=str(ARTIFACTS/'multistem-form.png'))
             page.locator('#v2AnaSave').click();saved()
             multi=next(t for t in data()['trees'] if t['id']==multi['id'])
@@ -133,9 +145,13 @@ def main():
             print('PASS: n campi per n fusti, virgola decimale, formula √Σd², singole misure e diametro equivalente nel DB',flush=True)
 
             # Rilievo successivo: aggiorna i fusti e conserva il primo rilievo.
-            page.locator(f'#overviewRows [data-tree="{multi["id"]}"]').click();page.locator('#v2DetailCensus').click()
+            page.locator(f'#overviewRows [data-tree="{multi["id"]}"]').click()
+            assert page.locator('.v2DetailCell').filter(has=page.locator('small',has_text='Diametro equivalente')).locator('b').inner_text()=='51,5 cm'
+            page.locator('#v2DetailCensus').click()
             assert page.locator('#surveyStemBox').is_visible()
             for input,value in zip(page.locator('#surveyStemInputs input').all(),['35','45','15']):input.fill(value)
+            assert page.locator('#surveyStemResult').inner_text()=='Diametro equivalente: 58,9 cm'
+            assert page.locator('#v2CensusDiameter').input_value()=='58,9'
             page.locator('#v2CensusNote').fill('Controllo successivo dei tre fusti.')
             page.locator('#v2CensusSave').click()
             page.wait_for_function("document.getElementById('v2CensusFeedback').textContent.includes('salvata')")

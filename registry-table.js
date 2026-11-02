@@ -19,7 +19,7 @@
     for (const photo of photos) if (!photo.removed) counts.set(photo.treeId, (counts.get(photo.treeId) || 0) + 1);
     const number = value => value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
     return trees.map(tree => ({tree,recordType:recordTypeLabel(tree),treeCount:recordQuantity(tree)??'',countEstimated:tree.countEstimated?'Sì':'No',stemCount:tree.stemCount??'',stemDiameters:(tree.stemDiameters||[]).join(' · '),geometry:hasGroupArea(tree)?JSON.stringify(tree.geometry):'',initialObservationNotes:firstObservationNotes(tree),surveyNotes:tree.surveyNotes||'',scientificName: tree.scientificName || '',
-      siteType: ({strada:'Strada',parco:'Parco / area verde',giardino:'Giardino',boschivo:'Area boschiva',altro:'Altro'})[tree.siteType] || tree.siteType || '',
+      siteType: treeContextLabel(tree),
       placement: tree.placement || '', lat:isValid(tree)?Number(tree.lat):'',lon:isValid(tree)?Number(tree.lon):'',
       height:number(tree.height),diameter:number(tree.diameter),crownDiameter:number(tree.crownDiameter),
       priority:({normal:'Ordinaria',medium:'Media',high:'Alta',urgent:'Urgente'})[tree.priority] || tree.priority || '',
@@ -138,6 +138,7 @@
       if (key === 'status') return statusChip(t);
       if (key === 'gps') return record.gps ? `<button class="tinyBtn" data-goto="${esc(t.id)}" aria-label="Apri ${esc(record.code)} sulla mappa">⌖ Mappa</button><button class="tinyBtn" data-street="${esc(t.id)}" title="Street View" aria-label="Street View per ${esc(record.code)}">SV ↗</button>` : '<span class="registryMissing">Da posizionare</span>';
       if (dateFields.has(key)) return dateLabel(record[key]);
+      if (key === 'diameter') return formatTreeDiameter(record[key]);
       if (numberFields.has(key)) return record[key] === '' ? '—' : record[key].toLocaleString('it-IT', {maximumFractionDigits: key === 'lat' || key === 'lon' ? 7 : 2});
       return esc(record[key] || (key === 'species' ? 'Non identificata' : '—'));
     };

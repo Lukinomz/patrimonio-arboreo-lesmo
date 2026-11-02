@@ -13,6 +13,9 @@
     if(first){const description=first.description||'';return ['','Primo rilievo dell’albero','Primo censimento (T0)','Rilevazione','Rilievo sanitario e dimensionale'].includes(description)?first.snapshot?.notes||tree.notes||'':description;}
     return tree.notes||'';
   };
+  window.formatTreeDiameter=value=>value===null||value===undefined||value===''?'—':Number(value).toLocaleString('it-IT',{useGrouping:false,maximumFractionDigits:1});
+  window.treeContextLabel=tree=>({strada:'Alberatura stradale',parco:'Parco o area verde',giardino:'Giardino',boschivo:'Area boschiva',altro:'Altro'})[tree?.siteType]||tree?.siteType||'Non classificato';
+  window.formatTreeCrown=tree=>tree?.crownDiameter===null||tree?.crownDiameter===undefined||tree?.crownDiameter===''?'—':Number(tree.crownDiameter).toLocaleString('it-IT',{maximumFractionDigits:2})+' m';
   window.recordTypeLabel=tree=>names[typeOf(tree)];
   window.recordQuantity=tree=>['group','woodland'].includes(typeOf(tree))?(Number.isSafeInteger(tree.treeCount)&&tree.treeCount>0?tree.treeCount:null):1;
   const numeric=value=>Number(String(value).trim().replace(',','.'));
@@ -55,9 +58,9 @@
   function updateStemResult(prefix){
     const values=stemValues(prefix),diameter=calculateStems(values);
     const cached=stemDrafts.get(prefix)||[];values.forEach((value,index)=>{cached[index]=value;});stemDrafts.set(prefix,cached);
-    byId(prefix+'Result').textContent=diameter===null?'Compila il diametro di ogni fusto.':`Diametro equivalente: ${fmt(diameter)} cm`;
+    byId(prefix+'Result').textContent=diameter===null?'Compila il diametro di ogni fusto.':`Diametro equivalente: ${formatTreeDiameter(diameter)} cm`;
     const target=byId(prefix==='groupStem'?'v21InitialDiameter':'v2CensusDiameter');
-    if(diameter!==null)target.value=String(diameter);
+    if(diameter!==null)target.value=formatTreeDiameter(diameter);
   }
   function renderStemInputs(prefix,values){
     const count=Number(byId(prefix+'Count').value),valid=Number.isInteger(count)&&count>=2&&count<=100;
@@ -127,7 +130,7 @@
     const group=['group','woodland'].includes(typeOf(tree));
     const box=document.createElement('section');box.className='groupRecordDetail';
     const history=historyEvents.filter(event=>event.treeId===tree.id&&SURVEY_TYPES.has(event.type)&&event.description).sort(historyOrder).slice(0,10);
-    box.innerHTML=`<div class="groupRecordBadge">${esc(recordTypeLabel(tree))}${group?` · ${recordQuantity(tree)===null?'quantità non indicata':`${tree.countEstimated?'circa ':''}${recordQuantity(tree)} esemplari`}`:''}${typeOf(tree)==='multistem'?` · ${tree.stemCount||'?'} fusti · Ø equivalente ${fmt(tree.diameter||0)} cm`:''}</div>${tree.stemDiameters?.length?`<p>Diametri dei fusti: ${tree.stemDiameters.map(fmt).join(' · ')} cm</p>`:''}${hasGroupArea(tree)?`<button class="btn" type="button" id="showGroupAreaDetail">Mostra area sulla mappa</button>`:''}<h3>Osservazioni primo rilievo</h3><p class="savedNotesText">${esc(firstObservationNotes(tree)||'Nessuna osservazione.')}</p>${tree.notes&&tree.notes!==firstObservationNotes(tree)?`<h3>Altre note conservate</h3><p class="savedNotesText">${esc(tree.notes)}</p>`:''}<details><summary>Osservazioni salvate (${historyEvents.filter(event=>event.treeId===tree.id&&SURVEY_TYPES.has(event.type)).length})</summary>${history.map(event=>`<article><small>${esc(event.date||'Data non indicata')}</small><p class="savedNotesText">${esc(event.description)}</p></article>`).join('')||'<p>Nessuna osservazione registrata.</p>'}</details>`;
+    box.innerHTML=`<div class="groupRecordBadge">${esc(recordTypeLabel(tree))}${group?` · ${recordQuantity(tree)===null?'quantità non indicata':`${tree.countEstimated?'circa ':''}${recordQuantity(tree)} esemplari`}`:''}${typeOf(tree)==='multistem'?` · ${tree.stemCount||'?'} fusti · Ø equivalente ${formatTreeDiameter(tree.diameter)} cm`:''}</div>${tree.stemDiameters?.length?`<p>Diametri dei fusti: ${tree.stemDiameters.map(fmt).join(' · ')} cm</p>`:''}${hasGroupArea(tree)?`<button class="btn" type="button" id="showGroupAreaDetail">Mostra area sulla mappa</button>`:''}<h3>Osservazioni primo rilievo</h3><p class="savedNotesText">${esc(firstObservationNotes(tree)||'Nessuna osservazione.')}</p>${tree.notes&&tree.notes!==firstObservationNotes(tree)?`<h3>Altre note conservate</h3><p class="savedNotesText">${esc(tree.notes)}</p>`:''}<details><summary>Osservazioni salvate (${historyEvents.filter(event=>event.treeId===tree.id&&SURVEY_TYPES.has(event.type)).length})</summary>${history.map(event=>`<article><small>${esc(event.date||'Data non indicata')}</small><p class="savedNotesText">${esc(event.description)}</p></article>`).join('')||'<p>Nessuna osservazione registrata.</p>'}</details>`;
     byId('v2DetailContent').appendChild(box);
     byId('showGroupAreaDetail')?.addEventListener('click',()=>{v2CloseDetail();switchSection('mappa');focusArea(tree.geometry);draw();});
   };

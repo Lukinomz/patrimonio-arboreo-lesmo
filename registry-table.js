@@ -5,9 +5,9 @@
   const collator = new Intl.Collator('it', {numeric: true, sensitivity: 'base'});
   const labels = {code: 'Identificativo', species: 'Specie', address: 'Via / località', status: 'Stato', gps: 'GPS', photos: 'Foto', surveys: 'Rilievi', surveyDate: 'Ultimo rilievo', modified: 'Ultima modifica'};
   const defaults = Object.keys(labels);
-  Object.assign(labels, {scientificName:'Nome scientifico',siteType:'Contesto',placement:'Collocazione',lat:'Latitudine',lon:'Longitudine',height:'Altezza (m)',diameter:'Diametro (cm)',crownDiameter:'Chioma (m)',priority:'Priorità',nextCheck:'Prossima verifica',origin:'Origine',plantDate:'Data piantumazione',created:'Data inserimento',notes:'Note'});
+  Object.assign(labels, {scientificName:'Nome scientifico',siteType:'Contesto',placement:'Collocazione',lat:'Latitudine',lon:'Longitudine',height:'Altezza (m)',diameter:'Diametro (cm)',crownDiameter:'Chioma (m)',priority:'Priorità',nextCheck:'Prossima verifica',origin:'Origine',plantDate:'Data piantumazione',created:'Data inserimento',notes:'Note conservate',initialObservationNotes:'Osservazioni primo rilievo',surveyNotes:'Ultime osservazioni',recordType:'Tipo di censimento',treeCount:'Esemplari',countEstimated:'Conteggio stimato',stemCount:'Numero fusti',stemDiameters:'Diametri fusti (cm)',geometry:'Perimetro GeoJSON'});
   const visibleColumns = new Set(defaults);
-  const numberFields = new Set(['lat','lon','height','diameter','crownDiameter','photos','surveys']);
+  const numberFields = new Set(['lat','lon','height','diameter','crownDiameter','photos','surveys','treeCount','stemCount']);
   const dateFields = new Set(['surveyDate','modified','nextCheck','plantDate','created']);
   const byId = id => document.getElementById(id);
   const normalize = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('it').trim();
@@ -18,7 +18,7 @@
     const counts = new Map();
     for (const photo of photos) if (!photo.removed) counts.set(photo.treeId, (counts.get(photo.treeId) || 0) + 1);
     const number = value => value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
-    return trees.map(tree => ({tree, scientificName: tree.scientificName || '',
+    return trees.map(tree => ({tree,recordType:recordTypeLabel(tree),treeCount:recordQuantity(tree)??'',countEstimated:tree.countEstimated?'Sì':'No',stemCount:tree.stemCount??'',stemDiameters:(tree.stemDiameters||[]).join(' · '),geometry:hasGroupArea(tree)?JSON.stringify(tree.geometry):'',initialObservationNotes:firstObservationNotes(tree),surveyNotes:tree.surveyNotes||'',scientificName: tree.scientificName || '',
       siteType: ({strada:'Strada',parco:'Parco / area verde',giardino:'Giardino',boschivo:'Area boschiva',altro:'Altro'})[tree.siteType] || tree.siteType || '',
       placement: tree.placement || '', lat:isValid(tree)?Number(tree.lat):'',lon:isValid(tree)?Number(tree.lon):'',
       height:number(tree.height),diameter:number(tree.diameter),crownDiameter:number(tree.crownDiameter),
@@ -27,7 +27,7 @@
       plantDate:tree.plantDate || '',created:(tree.created || '').slice(0,10),notes:tree.notes || '', code: publicCode(tree), species: String(tree.species || '').trim(), address: String(tree.address || '').trim(),
       statusKey: Object.hasOwn(statusName,tree.status) ? tree.status : 'unknown', status: statusName[tree.status] || 'Non valutato', gps: isValid(tree) ? 1 : 0, photos: counts.get(tree.id) || 0,
       surveys: surveyCount(tree.id), surveyDate: lastSurveyDate(tree) || '', modified: (tree.modified || tree.created || '').slice(0, 10),
-      search: normalize([publicCode(tree), tree.id, tree.species, tree.scientificName, tree.address, tree.notes].join(' '))}));
+      search: normalize([publicCode(tree), tree.id, tree.species, tree.scientificName, tree.address, tree.notes,firstObservationNotes(tree),tree.surveyNotes,recordTypeLabel(tree)].join(' '))}));
   }
   function criteria() {
     return {tokens: normalize(byId('overviewSearch').value).split(/\s+/).filter(Boolean), status: byId('overviewStatus').value,
@@ -134,17 +134,17 @@
     }
     const cell = (record, key) => {
       const t = record.tree;
-      if (key === 'code') return `<button class="codeLink" data-tree="${esc(t.id)}">${esc(record.code)}</button>`;
+      if (key === 'code') return `<button class="codeLink" data-tree="${esc(t.id)}">${esc(record.code)}</button>${record.tree.recordType&&record.tree.recordType!=='single'?`<small class="registryRecordType">${esc(recordTypeLabel(record.tree))}${['group','woodland'].includes(record.tree.recordType)?` · ${record.tree.countEstimated?'≈ ':''}${recordQuantity(record.tree)??'?'} esemplari`:''}</small>`:''}`;
       if (key === 'status') return statusChip(t);
       if (key === 'gps') return record.gps ? `<button class="tinyBtn" data-goto="${esc(t.id)}" aria-label="Apri ${esc(record.code)} sulla mappa">⌖ Mappa</button><button class="tinyBtn" data-street="${esc(t.id)}" title="Street View" aria-label="Street View per ${esc(record.code)}">SV ↗</button>` : '<span class="registryMissing">Da posizionare</span>';
       if (dateFields.has(key)) return dateLabel(record[key]);
       if (numberFields.has(key)) return record[key] === '' ? '—' : record[key].toLocaleString('it-IT', {maximumFractionDigits: key === 'lat' || key === 'lon' ? 7 : 2});
       return esc(record[key] || (key === 'species' ? 'Non identificata' : '—'));
     };
-    byId('overviewRows').innerHTML = visible.map(record => '<tr>' + columns.map(key => `<td class="${numberFields.has(key) ? 'registryNumber' : dateFields.has(key) ? 'registryDate' : key === 'gps' ? 'registryGps' : ''}" ${key === 'notes' ? `title="${esc(record.notes)}"` : ''}>${cell(record,key)}</td>`).join('') + `<td class="registryActions"><button class="tinyBtn" type="button" data-registry-edit="${esc(record.tree.id)}" aria-label="Modifica anagrafica ${esc(record.code)}">Modifica</button></td></tr>`).join('') || `<tr><td colspan="${columns.length + 1}"><div class="registryEmpty"><strong>${all.length ? 'Nessun albero corrisponde ai filtri' : 'Nessun albero registrato'}</strong>${all.length ? '<button class="btn" type="button" data-registry-reset>Azzera filtri</button>' : '<span>Usa “Nuovo albero” per aggiungere la prima scheda.</span>'}</div></td></tr>`;
+    byId('overviewRows').innerHTML = visible.map(record => '<tr>' + columns.map(key => `<td class="${numberFields.has(key) ? 'registryNumber' : dateFields.has(key) ? 'registryDate' : key === 'gps' ? 'registryGps' : ''}" ${key === 'notes' ? `title="${esc(record.notes)}"` : ''}>${cell(record,key)}</td>`).join('') + `<td class="registryActions"><button class="tinyBtn" type="button" data-registry-edit="${esc(record.tree.id)}" aria-label="Modifica anagrafica ${esc(record.code)}">Modifica</button></td></tr>`).join('') || `<tr><td colspan="${columns.length + 1}"><div class="registryEmpty"><strong>${all.length ? 'Nessuna scheda corrisponde ai filtri' : 'Nessuna scheda registrata'}</strong>${all.length ? '<button class="btn" type="button" data-registry-reset>Azzera filtri</button>' : '<span>Usa “Nuovo albero” per aggiungere la prima scheda.</span>'}</div></td></tr>`;
     byId('registryColumnsCount').textContent = `Colonne ${columns.length}/${Object.keys(labels).length}`;
     const range = hits.length ? `${offset + 1}–${offset + visible.length}` : '0';
-    byId('registrySummary').textContent = `${hits.length.toLocaleString('it-IT')} di ${all.length.toLocaleString('it-IT')} alberi`;
+    byId('registrySummary').textContent = `${hits.length.toLocaleString('it-IT')} di ${all.length.toLocaleString('it-IT')} schede`;
     byId('overviewCount').textContent = `${range} di ${hits.length.toLocaleString('it-IT')} risultati`;
     byId('pageInfo').textContent = `Pagina ${overviewPage + 1} di ${maxPage}`;
     byId('prevPage').disabled = overviewPage === 0;

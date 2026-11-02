@@ -52,6 +52,7 @@
   window.renderStatisticsDashboard = function () {
     if(!byId('statisticsDashboard'))return;
     const total=trees.length,knownIds=new Set(trees.map(tree=>tree.id));
+    const quantities=trees.map(recordQuantity),knownQuantity=quantities.reduce((sum,value)=>sum+(value??0),0),unknownQuantity=quantities.filter(value=>value===null).length,estimatedQuantity=trees.filter(tree=>tree.countEstimated).reduce((sum,tree)=>sum+(recordQuantity(tree)??0),0);
     const alive=trees.filter(tree=>['ok','sick','watch','critical'].includes(tree.status)).length;
     const attention=trees.filter(tree=>['sick','watch','critical'].includes(tree.status)).length;
     const present=trees.filter(tree=>!OUT_OF_STOCK_STATUSES.has(tree.status));
@@ -61,26 +62,26 @@
     const identified=trees.filter(tree=>tree.species?.trim()&&!/^(non identificata|da identificare|sconosciuta)$/i.test(tree.species.trim())).length;
     const species=new Map();for(const tree of trees){const name=tree.species?.trim()||'Non identificata';species.set(name,(species.get(name)||0)+1);}
     const distinct=[...species.keys()].filter(name=>!/^(non identificata|da identificare|sconosciuta)$/i.test(name)).length;
-    byId('analyticsMetrics').innerHTML=metric('Alberi in archivio',total,`${number(present.length)} presenti`,'','','')+
-      metric('Alberi vivi',alive,`${percentage(alive,total)}% dell’archivio`,'green')+
-      metric('Da seguire',attention,'Malati, da monitorare e critici','amber','overviewStatus','attention')+
-      metric('Specie censite',distinct,`${number(total-identified)} alberi da identificare`)+
+    byId('analyticsMetrics').innerHTML=metric('Schede in archivio',total,`${number(present.length)} presenti`,'','','')+
+      metric('Esemplari censiti',knownQuantity,`${estimatedQuantity?number(estimatedQuantity)+' stimati · ':''}${unknownQuantity?unknownQuantity+' '+(unknownQuantity===1?'gruppo':'gruppi')+' senza quantità':'singoli + gruppi + policormici'}`,'green')+
+      metric('Da seguire',attention,'Schede malate, da monitorare e critiche','amber','overviewStatus','attention')+
+      metric('Specie censite',distinct,`${number(total-identified)} schede da identificare`)+
       metric('Con posizione GPS',located,`${percentage(located,total)}% dell’archivio`,'green','overviewLocation','geo')+
-      metric('Verifiche scadute',overdue,'Alberi presenti · alla data di oggi',overdue?'red':'');
+      metric('Verifiche scadute',overdue,'Schede presenti · alla data di oggi',overdue?'red':'');
     const statuses=['ok','sick','watch','critical','unknown','dead','cut','fallen','removed'].map(key=>({key,label:statusName[key]||'Non valutato',value:trees.filter(tree=>(tree.status||'unknown')===key).length,color:colors[key]}));
     // Eventuali stati importati non riconosciuti rientrano tra i non valutati.
     statuses.find(item=>item.key==='unknown').value+=trees.filter(tree=>tree.status&&!Object.hasOwn(colors,tree.status)).length;
-    byId('analyticsHealth').innerHTML=`<div class="analyticsDonutLayout">${donut(statuses,total,'alberi')}${legend(statuses,total,'overviewStatus')}</div>`;
+    byId('analyticsHealth').innerHTML=`<div class="analyticsDonutLayout">${donut(statuses,total,'schede')}${legend(statuses,total,'overviewStatus')}</div>`;
     const ranking=[...species].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'it',{numeric:true}));
     const top=ranking.slice(0,8).map(([label,value],i)=>({key:label,label,value,color:palette[i]}));
     const other=ranking.slice(8).reduce((sum,[,value])=>sum+value,0);
     if(other)top.push({key:'',label:'Altre specie',value:other,color:palette[8]});
-    byId('analyticsSpecies').innerHTML=!total?'<div class="analyticsEmpty">Nessun albero registrato</div>':speciesView==='pie'?`<div class="analyticsDonutLayout">${donut(top,total,'alberi')}${legend(top,total,'species')}</div>`:bars(top,total,'species');
-    byId('analyticsSpeciesInfo').textContent=`${number(distinct)} specie · ${number(total)} alberi`;
+    byId('analyticsSpecies').innerHTML=!total?'<div class="analyticsEmpty">Nessun albero registrato</div>':speciesView==='pie'?`<div class="analyticsDonutLayout">${donut(top,total,'schede')}${legend(top,total,'species')}</div>`:bars(top,total,'species');
+    byId('analyticsSpeciesInfo').textContent=`${number(distinct)} specie · ${number(total)} schede`;
     const coverage=[{label:'Posizione GPS',value:located,filter:'overviewLocation',choice:'nogeo',action:'Da posizionare'},
       {label:'Specie identificata',value:identified},{label:'Almeno una fotografia',value:photoTrees.size,filter:'v21PhotoFilter',choice:'without',action:'Senza foto'},
       {label:'Stato sanitario valutato',value:trees.filter(tree=>['ok','sick','watch','critical','dead','cut','fallen'].includes(tree.status)).length}];
-    byId('analyticsCoverage').innerHTML=coverage.map(item=>`<div class="analyticsCoverageItem"><div><span>${item.label}</span><strong>${percentage(item.value,total)}%</strong></div><div class="analyticsCoverageTrack"><span style="width:${percentage(item.value,total)}%"></span></div><footer><small>${number(item.value)} di ${number(total)} alberi</small>${item.filter&&total>item.value?`<button type="button" data-analytics-filter="${item.filter}" data-value="${item.choice}">${item.action} (${number(total-item.value)}) ↗</button>`:''}</footer></div>`).join('');
+    byId('analyticsCoverage').innerHTML=coverage.map(item=>`<div class="analyticsCoverageItem"><div><span>${item.label}</span><strong>${percentage(item.value,total)}%</strong></div><div class="analyticsCoverageTrack"><span style="width:${percentage(item.value,total)}%"></span></div><footer><small>${number(item.value)} di ${number(total)} schede</small>${item.filter&&total>item.value?`<button type="button" data-analytics-filter="${item.filter}" data-value="${item.choice}">${item.action} (${number(total-item.value)}) ↗</button>`:''}</footer></div>`).join('');
     const dated=historyEvents.filter(event=>!event.cancelled&&knownIds.has(event.treeId)&&validDate(event.date)&&(SURVEY_TYPES.has(event.type)||WORK_TYPES.has(event.type)));
     const years=[...new Set([String(new Date().getFullYear()),...dated.map(event=>event.date.slice(0,4))])].sort().reverse();
     if(!years.includes(activityYear))activityYear=years[0];
@@ -92,11 +93,11 @@
     byId('analyticsActivity').innerHTML=groupedChart(groups,[{label:'Rilievi',color:'#397b56'},{label:'Interventi',color:'#7096a0'}],`Rilievi e interventi mensili nel ${activityYear}`);
     const annual=lifeAnnualTotals().slice(0,8).reverse();
     byId('analyticsBalance').innerHTML=annual.length?groupedChart(annual.map(item=>({label:item.year,values:[item.piantumazione,item.abbattimento+item.caduta+item.morte],net:item.piantumazione-item.abbattimento-item.caduta-item.morte})),[{label:'Piantati',color:'#397b56'},{label:'Perdite',color:'#be7861'}],'Bilancio arboreo: piantumazioni e prime perdite datate per anno'):'<div class="analyticsEmpty">Non ci sono ancora piantumazioni o perdite con data registrata.</div>';
-    byId('analyticsBalanceInfo').textContent=annual.length?'Saldo indicato sopra ogni anno':'Eventi annuali';
+    byId('analyticsBalanceInfo').textContent=annual.length?'Conteggi per scheda · saldo sopra ogni anno':'Eventi annuali';
   };
   document.addEventListener('DOMContentLoaded',()=>{
     const view=byId('viewStatistiche'),dashboard=document.createElement('section');dashboard.id='statisticsDashboard';
-    dashboard.innerHTML=`<div class="analyticsHeading"><div><span class="analyticsEyebrow">PANORAMICA DELL’ARCHIVIO</span><h2>Il patrimonio, a colpo d’occhio.</h2></div><span class="analyticsCurrent">Situazione attuale</span></div><div id="analyticsMetrics" class="analyticsMetrics"></div><div class="analyticsGrid"><section class="analyticsCard"><header><div><h3>Stato degli alberi</h3><p>Distribuzione sull’intero archivio</p></div></header><div id="analyticsHealth"></div></section><section class="analyticsCard"><header><div><h3>Composizione per specie</h3><p id="analyticsSpeciesInfo"></p></div><div class="analyticsViewToggle" role="group" aria-label="Tipo di grafico specie"><button type="button" data-species-view="bars" aria-pressed="true">Barre</button><button type="button" data-species-view="pie" aria-pressed="false">Torta</button></div></header><div id="analyticsSpecies"></div></section><section class="analyticsCard"><header><div><h3>Completezza del censimento</h3><p>Informazioni disponibili per albero</p></div></header><div id="analyticsCoverage"></div></section><section class="analyticsCard"><header><div><h3>Rilievi e interventi</h3><p id="analyticsActivityInfo"></p></div><label class="analyticsYearLabel">Anno<select id="analyticsActivityYear" aria-label="Anno dei rilievi e interventi"></select></label></header><div id="analyticsActivity"></div></section></div><section class="analyticsCard analyticsAnnual"><header><div><h3>Evoluzione del patrimonio</h3><p id="analyticsBalanceInfo"></p></div><a href="#lifeBalanceCard">Dettaglio annuale ↓</a></header><div id="analyticsBalance"></div></section>`;
+    dashboard.innerHTML=`<div class="analyticsHeading"><div><span class="analyticsEyebrow">PANORAMICA DELL’ARCHIVIO</span><h2>Il patrimonio, a colpo d’occhio.</h2></div><span class="analyticsCurrent">Situazione attuale</span></div><div id="analyticsMetrics" class="analyticsMetrics"></div><div class="analyticsGrid"><section class="analyticsCard"><header><div><h3>Stato dei censimenti</h3><p>Distribuzione per scheda, singola o di gruppo</p></div></header><div id="analyticsHealth"></div></section><section class="analyticsCard"><header><div><h3>Composizione per specie</h3><p id="analyticsSpeciesInfo"></p></div><div class="analyticsViewToggle" role="group" aria-label="Tipo di grafico specie"><button type="button" data-species-view="bars" aria-pressed="true">Barre</button><button type="button" data-species-view="pie" aria-pressed="false">Torta</button></div></header><div id="analyticsSpecies"></div></section><section class="analyticsCard"><header><div><h3>Completezza del censimento</h3><p>Informazioni disponibili per scheda</p></div></header><div id="analyticsCoverage"></div></section><section class="analyticsCard"><header><div><h3>Rilievi e interventi</h3><p id="analyticsActivityInfo"></p></div><label class="analyticsYearLabel">Anno<select id="analyticsActivityYear" aria-label="Anno dei rilievi e interventi"></select></label></header><div id="analyticsActivity"></div></section></div><section class="analyticsCard analyticsAnnual"><header><div><h3>Piantumazioni e perdite</h3><p id="analyticsBalanceInfo"></p></div><a href="#lifeBalanceCard">Dettaglio annuale ↓</a></header><div id="analyticsBalance"></div></section>`;
     view.prepend(dashboard);
     view.addEventListener('click',event=>{
       const filter=event.target.closest('[data-analytics-filter]');if(filter)applyRegistryFilter(filter.dataset.analyticsFilter,filter.dataset.value);

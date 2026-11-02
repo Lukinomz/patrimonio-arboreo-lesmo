@@ -86,7 +86,7 @@ def main():
             def cells(column): return page.locator(f'#overviewRows tr td:nth-child({column})').all_text_contents()
             def codes(): return page.locator('#overviewRows [data-tree]').all_text_contents()
             def sort(key): page.locator(f'[data-registry-sort="{key}"]').click()
-            assert page.locator('#registrySummary').inner_text() == '67 di 67 alberi'
+            assert page.locator('#registrySummary').inner_text() == '67 di 67 schede'
             page.locator('#v21PageSize').select_option('25')
             assert len(codes()) == 25 and codes()[0] == 'LESMO-A0001'
             page.locator('#nextPage').click(); assert codes()[0] == 'LESMO-A0026'
@@ -171,7 +171,7 @@ def main():
             assert page.locator('#v2DetailOverlay').is_visible(); page.locator('#v2DetailClose').click()
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-columns="all"]').click()
-            assert page.locator('#overviewTable th').count() == 24
+            assert page.locator('#overviewTable th').count() == 32
             sort('diameter')
             visible_keys=page.locator('[data-registry-sort]').evaluate_all('es=>es.map(e=>e.dataset.registrySort)')
             diameter_column=visible_keys.index('diameter')+1
@@ -211,7 +211,7 @@ def main():
             page.locator('.mainNav [data-view="statistiche"]').click()
             page.locator('[data-analytics-filter="overviewStatus"][data-value="attention"]').click()
             assert page.locator('#overviewStatus').input_value() == 'attention'
-            assert page.locator('#registrySummary').inner_text() == '45 di 67 alberi'
+            assert page.locator('#registrySummary').inner_text() == '45 di 67 schede'
             page.locator('#v21ResetFilters').click()
             # Zero record non deve generare percentuali o grafici non validi.
             empty_page=new_page()

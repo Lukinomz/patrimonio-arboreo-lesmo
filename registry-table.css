@@ -115,3 +115,4 @@ body:not(.mobileMode) #viewRiepilogo > .metricGrid { display: none; }
 body:not(.mobileMode) .workspace:has(#viewRiepilogo:not(.hidden)) > .workTop { padding: 14px 22px; margin-bottom: 12px; }
 body:not(.mobileMode) .workspace:has(#viewRiepilogo:not(.hidden)) > .workTop h1 { font-size: 25px; margin: 5px 0; }
 body:not(.mobileMode) #viewRiepilogo > .v2SectionActions { margin: 8px 0 12px; }
+.registryRecordType { display:block; margin-top:5px; max-width:185px; color:#7d906d; font-size:10px; font-weight:500; }

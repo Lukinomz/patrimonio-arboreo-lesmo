@@ -1,0 +1,41 @@
+.groupCensusEditor { padding:16px; margin:12px 0 18px; border:1px solid #d3e0c9; background:#f1f6eb; border-radius:12px; }
+.groupCensusEditor > label, .groupQuantityFields > label, .stemEditor label { display:block; font-size:12px; font-weight:650; color:#4b6643; }
+.groupCensusEditor input:not([type=checkbox]), .groupCensusEditor select, .stemEditor input { width:100%; display:block; margin-top:6px; border:1px solid #d1dec8; background:#fffefb; color:#294733; border-radius:8px; padding:11px; min-height:44px; font-size:16px; }
+.groupQuantityFields { display:grid; grid-template-columns:1.3fr 1fr; gap:14px; margin-top:14px; align-items:center; }
+.groupQuantityFields .groupEstimated { display:flex; align-items:center; gap:8px; font-size:12px; }
+.groupEstimated input { accent-color:#397348; width:18px; height:18px; }
+#groupAreaFields { margin-top:14px; color:#57714b; font-size:12px; }
+.groupAreaActions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.stemEditor { padding:14px; margin-top:14px; background:#fffefb; border:1px solid #d3dfca; border-radius:10px; }
+.stemInputs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:12px; }
+.stemResult { display:block; background:#e9f3e0; color:#375e2f; padding:12px; margin-top:12px; border-radius:8px; font-size:15px; font-weight:650; }
+.stemEditor > small { display:block; margin-top:8px; color:#839478; font-size:11px; }
+.groupCensusEditor [hidden], .stemEditor[hidden] { display:none; }
+.groupRecordBadge { display:block; padding:10px 12px; background:#edf5e5; color:#42653a; border-radius:8px; font-size:13px; margin-bottom:14px; }
+.groupRecordDetail h3 { font-size:15px; color:#3b5933; margin:18px 0 8px; }
+.savedNotesText { white-space:pre-wrap; overflow-wrap:anywhere; color:#47603e; font-size:14px; line-height:1.6; }
+.groupRecordDetail details { padding:12px; background:#f6f8f1; border:1px solid #e1e7d8; border-radius:9px; }
+.groupRecordDetail summary, .savedSurveyNotes summary { font-size:13px; color:#59714b; cursor:pointer; }
+.groupRecordDetail article { padding:12px 0; border-bottom:1px solid #e5ebdf; }
+.groupRecordDetail article small { color:#829475; font-size:11px; }
+.savedSurveyNotes { margin:14px 0; padding:12px; background:#f4f7ef; border:1px solid #dce6d3; border-radius:9px; }
+.savedSurveyNotes h4 { margin:12px 0 5px; color:#60764f; font-size:12px; }
+#groupAreas { position:absolute; inset:0; z-index:3; pointer-events:none; overflow:hidden; }
+#groupAreas polygon { cursor:pointer; }
+#groupAreas polygon:focus { outline:none; stroke-width:5px; fill-opacity:.35; }
+.groupAreaLabel { text-anchor:middle; font-size:13px; fill:#264c30; stroke:#fffefb; stroke-width:4; paint-order:stroke; font-weight:750; pointer-events:none; }
+.groupAreaMapButton { font-size:11px; }
+#groupAreaTools { position:absolute; z-index:19; top:8px; left:8px; width:min(410px,calc(100% - 72px)); padding:14px; border:1px solid #c8dbc0; border-radius:12px; background:#fffefb; box-shadow:0 5px 22px #23442825; color:#3e6338; }
+#groupAreaTools strong { font-size:16px; }
+#groupAreaTools p { font-size:12px; line-height:1.5; margin:8px 0; }
+#groupAreaTools > span { display:block; font-size:11px; color:#78916a; margin:8px 0; }
+#groupAreaTools > div { display:flex; flex-wrap:wrap; gap:7px; }
+#groupAreaTools button { border:1px solid #d2e0c9; background:#f1f6e9; color:#466e39; border-radius:8px; padding:10px; min-height:42px; font-size:12px; }
+#groupAreaTools #groupAreaConfirm { background:#346b43; border-color:#346b43; color:#fff; }
+#groupAreaTools button:disabled { opacity:.45; cursor:default; }
+#groupAreaTools[hidden] { display:none; }
+.groupAreaDrawing :is(.searchPlace,.mapStatusFilters,.mGeoPanel,.modehint,.mMapTools) { display:none!important; }
+.groupAreaDrawing .map { cursor:crosshair; }
+@media(max-width:600px) { .stemInputs { grid-template-columns:repeat(2,minmax(0,1fr)); }.groupQuantityFields { grid-template-columns:1fr; }.groupCensusEditor { padding:12px; }#groupAreaTools { padding:12px; }#groupAreaTools button { font-size:11px; padding:8px; } }
+/* I messaggi informativi non devono intercettare i tocchi sulla mappa. */
+.toast { pointer-events: none; }

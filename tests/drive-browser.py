@@ -258,6 +258,7 @@ def main():
             connect(numbered)
             numbered.evaluate("switchSection('anagrafica')")
             numbered.locator("#mAddNewTree").click()
+            numbered.locator("#chooseManualTree").click()
             numbered.locator("#v2AnagOverlay").wait_for(state="visible")
             assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0002"
             numbered.locator("#v2AnaSpecies").fill("Albero numero due")
@@ -278,6 +279,7 @@ def main():
             assert numbered.evaluate("trees.find(t => t.code === 'LESMO-A0001').id") == seed["trees"][0]["id"]
             assert numbered.evaluate("photos[0].relativePath") == seed["photos"][0]["relativePath"]
             numbered.locator("#mAddNewTree").click()
+            numbered.locator("#chooseManualTree").click()
             numbered.locator("#v2AnagOverlay").wait_for(state="visible")
             assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0004"
             numbered.locator("#v2AnagClose").click()
@@ -290,6 +292,7 @@ def main():
             free_again["history"] = [h for h in free_again["history"] if h["treeId"] not in removed_ids]
             assert server_request("save", revision=current["revision"], data=free_again)["ok"]
             numbered.locator("#mAddNewTree").click()
+            numbered.locator("#chooseManualTree").click()
             numbered.locator("#v2AnagOverlay").wait_for(state="visible")
             assert numbered.locator("#v2AnaCode").input_value() == "LESMO-A0002"
             assert numbered.evaluate("trees.length") == 2

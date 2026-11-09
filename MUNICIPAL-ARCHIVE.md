@@ -54,3 +54,49 @@ con minore incertezza dichiarata e richiede una scelta esplicita dell’utente.
 Non modifica la precisione del ricevitore. Le prove automatiche simulano il GPS;
 il comportamento reale dipende dal dispositivo, dai permessi e dalla ricezione.
 L’offline completo resta una fase separata.
+
+
+## Contesti esistenti e filtri (novembre 2026)
+
+Il campo `siteType` già presente nelle schede viene letto anche dai filtri del
+registro misto. L’elenco dei contesti comprende i valori preesistenti e i vecchi
+collegamenti `areaId`. Il caricamento non riscrive alberi, misure, note, foto o
+snapshot delle rilevazioni. Una collezione opzionale `contexts` conserva nomi,
+identificativi e alias del catalogo. I riferimenti testuali precedenti restano
+riconosciuti anche dopo una rinomina da Admin. L’associazione di una nuova scheda
+usa il medesimo campo Contesto; “Area di appartenenza” non è più un secondo
+campo nell’interfaccia. Il servizio Drive e i backup mantengono il catalogo.
+
+Le modifiche al catalogo si eseguono da Admin → Contesti. Le altre persone possono
+selezionare i contesti esistenti e consultarne l’inventario. La protezione usa la
+sessione amministratore già presente nell’app.
+
+`column-filters.js` condivide il comportamento fra registro arboreo e registro
+misto: filtri sulle intestazioni, selezioni multiple per tipo/condizione/contesto,
+intervalli numerici e date, azzeramento, conteggi ed esportazione degli stessi
+risultati prima della paginazione. I registri su mobile mantengono una vera
+struttura tabellare con scorrimento orizzontale, intestazioni e codice fissi.
+
+`python tests/context-filters-browser.py` verifica un archivio simulato con 91
+alberi, gruppo di 50, contesti testuali preesistenti, grafie diverse di Marconi,
+rilievi e una foto: le schede e lo storico originali vengono confrontati per
+uguaglianza completa dopo filtri, esportazioni, modifica del solo catalogo,
+riapertura e backup. Nessun dato del DB condiviso reale viene usato nelle prove.
+Le grafie diverse delle vie non vengono unite automaticamente.
+
+
+### Parchi: associazione manuale
+
+Il Contesto preesistente (`siteType`) rimane distinto dal parco specifico.
+Il nuovo campo opzionale `parkId` viene impostato soltanto quando l’utente
+sceglie un parco nella scheda o conferma un’assegnazione dalla tabella.
+Il caricamento non deduce alcun parco dal Contesto, dalla via o dal GPS:
+le 91 schede già esistenti restano senza associazione al parco finché non
+vengono selezionate esplicitamente. Il Contesto originario e gli snapshot
+precedenti restano conservati anche durante l’assegnazione del parco.
+
+Contesto e Parco hanno filtri distinti a selezione multipla. L’inventario dei
+parchi conta soltanto le associazioni esplicite a `parkId`. Il test dei 91
+censimenti verifica anche un’assegnazione manuale di due schede (un gruppo
+con 50 esemplari e un singolo), lasciando identici gli altri 89 alberi e tutti
+i rilievi precedenti.

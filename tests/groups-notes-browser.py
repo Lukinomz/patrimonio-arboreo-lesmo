@@ -84,7 +84,7 @@ def main():
 
             # Gruppo di 50: bozze conservate andando sulla mappa, forma chiusa e codice unico.
             manual();page.locator('#v2AnaSpecies').fill('Cipressini');page.locator('#groupRecordType').select_option('group')
-            page.locator('#groupTreeCount').fill('50');page.locator('#v2AnaSite').select_option('parco');page.locator('#v21InitialCrown').fill('7,5');page.locator('#v21InitialNotes').fill('Filare di 50 cipressini lungo il confine.')
+            page.locator('#groupTreeCount').fill('50');page.locator('#v2AnaSite').select_option(label='Parco o area verde');page.locator('#v21InitialCrown').fill('7,5');page.locator('#v21InitialNotes').fill('Filare di 50 cipressini lungo il confine.')
             code=page.locator('#v2AnaCode').input_value()
             page.locator('#v2AnaPhotoFiles').set_input_files({'name':'gruppo.png','mimeType':'image/png','buffer':base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==')})
             page.locator('#groupDrawArea').click()
@@ -192,7 +192,7 @@ def main():
             # Nuova sessione iPhone: caricamento reale da Drive simulato e geometrie/fusti intatti.
             page=page_new(True)
             page.locator('#overviewSearch').fill(multi_code)
-            page.locator('#mRegistryCards .mTreeCard').click();page.locator('#v2DetailAnag').click()
+            page.locator('#overviewRows [data-tree]').click();page.locator('#v2DetailAnag').click()
             assert page.locator('#v21InitialNotes').is_visible() and page.locator('#v21InitialNotes').input_value()=='Due fusti dalla stessa ceppaia.'
             assert page.locator('#groupStemInputs input').count()==3
             assert [input.input_value() for input in page.locator('#groupStemInputs input').all()]==['35','45','15']

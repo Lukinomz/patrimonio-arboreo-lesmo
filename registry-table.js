@@ -4,8 +4,9 @@
   const state = {sort: 'code', direction: 'asc', species: new Set(), address: new Set()};
   const collator = new Intl.Collator('it', {numeric: true, sensitivity: 'base'});
   const labels = {code: 'Identificativo', species: 'Specie', address: 'Via / località', status: 'Stato', gps: 'GPS', photos: 'Foto', surveys: 'Rilievi', surveyDate: 'Ultimo rilievo', modified: 'Ultima modifica'};
-  const defaults = Object.keys(labels);
-  Object.assign(labels, {scientificName:'Nome scientifico',siteType:'Contesto',placement:'Collocazione',lat:'Latitudine',lon:'Longitudine',height:'Altezza (m)',diameter:'Diametro (cm)',crownDiameter:'Chioma (m)',priority:'Priorità',nextCheck:'Prossima verifica',origin:'Origine',plantDate:'Data piantumazione',created:'Data inserimento',notes:'Note conservate',initialObservationNotes:'Osservazioni primo rilievo',surveyNotes:'Ultime osservazioni',recordType:'Tipo di censimento',treeCount:'Esemplari',countEstimated:'Conteggio stimato',stemCount:'Numero fusti',stemDiameters:'Diametri fusti (cm)',geometry:'Perimetro GeoJSON'});
+  const defaults = Object.keys(labels);defaults.splice(3,0,'siteType','park');
+  let columnFilters;
+  Object.assign(labels, {park:'Parco',scientificName:'Nome scientifico',siteType:'Contesto',placement:'Collocazione',lat:'Latitudine',lon:'Longitudine',height:'Altezza (m)',diameter:'Diametro (cm)',crownDiameter:'Chioma (m)',priority:'Priorità',nextCheck:'Prossima verifica',origin:'Origine',plantDate:'Data piantumazione',created:'Data inserimento',notes:'Note conservate',initialObservationNotes:'Osservazioni primo rilievo',surveyNotes:'Ultime osservazioni',recordType:'Tipo di censimento',treeCount:'Esemplari',countEstimated:'Conteggio stimato',stemCount:'Numero fusti',stemDiameters:'Diametri fusti (cm)',geometry:'Perimetro GeoJSON'});
   const visibleColumns = new Set(defaults);
   const numberFields = new Set(['lat','lon','height','diameter','crownDiameter','photos','surveys','treeCount','stemCount']);
   const dateFields = new Set(['surveyDate','modified','nextCheck','plantDate','created']);
@@ -18,7 +19,7 @@
     const counts = new Map();
     for (const photo of photos) if (!photo.removed) counts.set(photo.treeId, (counts.get(photo.treeId) || 0) + 1);
     const number = value => value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
-    return trees.map(tree => ({tree,recordType:recordTypeLabel(tree),treeCount:recordQuantity(tree)??'',countEstimated:tree.countEstimated?'Sì':'No',stemCount:tree.stemCount??'',stemDiameters:(tree.stemDiameters||[]).join(' · '),geometry:hasGroupArea(tree)?JSON.stringify(tree.geometry):'',initialObservationNotes:firstObservationNotes(tree),surveyNotes:tree.surveyNotes||'',scientificName: tree.scientificName || '',
+    return trees.map(tree => ({tree,park:municipalParkName(tree),recordType:recordTypeLabel(tree),treeCount:recordQuantity(tree)??'',countEstimated:tree.countEstimated?'Sì':'No',stemCount:tree.stemCount??'',stemDiameters:(tree.stemDiameters||[]).join(' · '),geometry:hasGroupArea(tree)?JSON.stringify(tree.geometry):'',initialObservationNotes:firstObservationNotes(tree),surveyNotes:tree.surveyNotes||'',scientificName: tree.scientificName || '',
       siteType: treeContextLabel(tree),
       placement: tree.placement || '', lat:isValid(tree)?Number(tree.lat):'',lon:isValid(tree)?Number(tree.lon):'',
       height:number(tree.height),diameter:number(tree.diameter),crownDiameter:number(tree.crownDiameter),
@@ -27,7 +28,7 @@
       plantDate:tree.plantDate || '',created:(tree.created || '').slice(0,10),notes:tree.notes || '', code: publicCode(tree), species: String(tree.species || '').trim(), address: String(tree.address || '').trim(),
       statusKey: Object.hasOwn(statusName,tree.status) ? tree.status : 'unknown', status: statusName[tree.status] || 'Non valutato', gps: isValid(tree) ? 1 : 0, photos: counts.get(tree.id) || 0,
       surveys: surveyCount(tree.id), surveyDate: lastSurveyDate(tree) || '', modified: (tree.modified || tree.created || '').slice(0, 10),
-      search: normalize([publicCode(tree), tree.id, tree.species, tree.scientificName, tree.address, tree.notes,firstObservationNotes(tree),tree.surveyNotes,recordTypeLabel(tree)].join(' '))}));
+      search: normalize([publicCode(tree), tree.id, tree.species, tree.scientificName, tree.address, tree.notes,firstObservationNotes(tree),tree.surveyNotes,recordTypeLabel(tree),treeContextLabel(tree)].join(' '))}));
   }
   function criteria() {
     return {tokens: normalize(byId('overviewSearch').value).split(/\s+/).filter(Boolean), status: byId('overviewStatus').value,
@@ -47,7 +48,7 @@
     const difference = typeof av === 'number' ? av - bv : collator.compare(av, bv);
     return difference * (state.direction === 'asc' ? 1 : -1) || collator.compare(a.code, b.code) || collator.compare(a.tree.id, b.tree.id);
   }
-  function filteredRows(all, filters) { return all.filter(record => matches(record, filters)).sort(compare); }
+  function filteredRows(all, filters) { return all.filter(record => matches(record, filters)&&(!columnFilters||columnFilters.matches(record))).sort(compare); }
   function rerender() {
     overviewPage = 0;
     byId('v21RegistryViewport').scrollTop = 0;
@@ -102,7 +103,7 @@
     for (const key of ['species', 'address']) for (const value of state[key]) add(key, value, `${key === 'species' ? 'Specie' : 'Via'}: ${value}`);
     const box = byId('registryActiveFilters');
     box.innerHTML = chips.join(''); box.hidden = !chips.length;
-    byId('v21ResetFilters').disabled = !chips.length;
+    byId('v21ResetFilters').disabled = !chips.length&&!columnFilters?.hasFilters();
   }
   function renderSort() {
     const ascending = state.direction === 'asc';
@@ -121,6 +122,14 @@
     byId('registryOrder').textContent = `${labels[state.sort]} · ${direction}`;
   }
   window.renderRegistryTable = function () {
+    if(!columnFilters){
+      const columns=Object.fromEntries(Object.entries(labels).map(([key,label])=>[key,{label,type:numberFields.has(key)?'number':dateFields.has(key)?'date':'text'}]));
+      columns.siteType={label:'Contesto',context:true,value:row=>municipalContextId(row.tree),format:municipalAreaName};columns.park={label:'Parco',park:true,value:row=>municipalParkId(row.tree),format:municipalAreaName,choices:()=>municipalParks().map(p=>p.id)};columns.gps.format=value=>value==='1'?'Con GPS':'Senza GPS';
+      columnFilters=RegistryFilters.create({id:'trees',columns,getRows:records,baseMatch:row=>matches(row,criteria()),onChange:()=>{overviewPage=0;renderDashboard();}});
+      const quick=document.createElement('button');quick.id='registryContextFilter';quick.className='columnQuickFilter';const box=document.createElement('label');box.className='registryField';box.innerHTML='<span class="registryFieldLabel">Contesto</span>';box.appendChild(quick);byId('overviewStatus').closest('label').insertAdjacentElement('afterend',box);columnFilters.quickButton(quick,'siteType','Tutti i contesti');const parkButton=document.createElement('button'),parkBox=document.createElement('label');parkButton.id='registryParkFilter';parkBox.className='registryField';parkBox.innerHTML='<span class="registryFieldLabel">Parco</span>';parkBox.appendChild(parkButton);box.after(parkBox);columnFilters.quickButton(parkButton,'park','Tutti i parchi');
+      const status=document.createElement('button');status.id='registryStatusFilter';byId('overviewStatus').hidden=true;byId('overviewStatus').insertAdjacentElement('afterend',status);columnFilters.quickButton(status,'status','Tutte le condizioni');
+      const chips=document.createElement('div');chips.id='registryColumnFilterChips';chips.className='columnFilterChips';byId('registryActiveFilters').insertAdjacentElement('afterend',chips);
+    }
     const all = records(), filters = criteria(), hits = filteredRows(all, filters);
     const maxPage = Math.max(1, Math.ceil(hits.length / perPage));
     overviewPage = Math.max(0, Math.min(overviewPage, maxPage - 1));
@@ -161,9 +170,10 @@
       option.textContent = `${option.dataset.label} (${count})`;
       option.disabled = !count && option.value !== filters.status;
     }
-    renderFilterChips(filters); renderSort();
+    renderFilterChips(filters); renderSort();columnFilters.headers(table,'data-registry-sort');columnFilters.chips(byId('registryColumnFilterChips'));
   };
-  window.resetRegistryFilters = function () {
+  window.resetRegistryFilters = function (options={}) {
+    columnFilters?.reset(options);
     for (const id of ['overviewStatus', 'overviewLocation', 'v21PhotoFilter']) byId(id).value = 'all';
     byId('overviewSearch').value = '';
     state.species.clear(); state.address.clear();
@@ -184,7 +194,7 @@
     fileDownload('alberi_filtrati_lesmo.csv', '\ufeff' + [header, ...data].map(row => row.map(quote).join(';')).join('\r\n'), 'text/csv;charset=utf-8');
     tell(`${rows.length} alberi esportati`);
   };
-  window.applyRegistryFilter = function(key,value){resetRegistryFilters();if(key==='species')state.species.add(value);else if(key)byId(key).value=value;rerender();switchSection('anagrafica');document.querySelector('.v21Registry').scrollIntoView({block:'start'});};
+  window.applyRegistryFilter = function(key,value){resetRegistryFilters({preserveContext:true});if(key==='species')state.species.add(value);else if(key)byId(key).value=value;rerender();switchSection('anagrafica');document.querySelector('.v21Registry').scrollIntoView({block:'start'});};
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.querySelector('.v21Registry');
     byId('overviewSearch').addEventListener('input', rerender);

@@ -117,7 +117,7 @@ def main():
             print('PASS: tutte le 9 colonne, entrambe le direzioni, numeri naturali, dati mancanti in fondo, tastiera e pagine', flush=True)
 
             # Filtri combinati, ricerca senza distinzione di accenti e selezioni multiple.
-            page.locator('#overviewStatus').select_option('ok')
+            page.locator('#overviewStatus').evaluate("e=>{e.value='ok';e.dispatchEvent(new Event('change',{bubbles:true}))}")
             page.locator('#overviewLocation').select_option('nogeo')
             page.locator('#v21PhotoFilter').select_option('without')
             expected = [t['code'] for t in trees if t['status'] == 'ok' and t['lat'] is None and int(t['id'][-6:]) % 11 == 0]
@@ -153,7 +153,7 @@ def main():
 
             # L'esportazione contiene tutti i risultati, non solo la pagina corrente.
             page.locator('#v21PageSize').select_option('25')
-            page.locator('#overviewStatus').select_option('watch')
+            page.locator('#overviewStatus').evaluate("e=>{e.value='watch';e.dispatchEvent(new Event('change',{bubbles:true}))}")
             sort('code')  # crescente
             expected = [t['code'] for t in trees if t['status'] == 'watch']
             with page.expect_download() as download:
@@ -171,7 +171,7 @@ def main():
             assert page.locator('#v2DetailOverlay').is_visible(); page.locator('#v2DetailClose').click()
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-columns="all"]').click()
-            assert page.locator('#overviewTable th').count() == 32
+            assert page.locator('#overviewTable th').count() == 33
             sort('diameter')
             visible_keys=page.locator('[data-registry-sort]').evaluate_all('es=>es.map(e=>e.dataset.registrySort)')
             diameter_column=visible_keys.index('diameter')+1
@@ -179,7 +179,7 @@ def main():
             sort('diameter');values=list(map(int,cells(diameter_column)));assert values==sorted(values,reverse=True)
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-columns="default"]').click()
-            assert page.locator('#overviewTable th').count() == 10
+            assert page.locator('#overviewTable th').count() == 12
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-edit]').first.click()
             assert page.locator('#v2AnagOverlay').is_visible()
@@ -253,12 +253,13 @@ def main():
             for width in [320, 390]:
                 mobile = new_page(True, width)
                 mobile.locator('#v21Sort').select_option('photos')
-                assert mobile.locator('#mRegistryCards .mTreeCard').count() == 50
-                assert mobile.locator('#mRegistryCards .mTreeId').first.inner_text() == 'LESMO-A0010'
+                assert mobile.locator('#overviewRows [data-tree]').count() == 50
+                assert mobile.locator('#overviewRows [data-tree]').first.inner_text() == 'LESMO-A0010'
                 mobile.locator('#registrySortDirection').click()
-                assert mobile.locator('#mRegistryCards .mTreeId').first.inner_text() == 'LESMO-A0011'
+                assert mobile.locator('#overviewRows [data-tree]').first.inner_text() == 'LESMO-A0011'
                 mobile.locator('#overviewSearch').fill('LESMO-A0001')
-                assert mobile.locator('#mRegistryCards .mTreeCard').count() == 1
+                assert mobile.locator('#overviewRows [data-tree]').count() == 1
+                mobile.locator('#mobileRegistryFilters > summary').click()
                 facet = mobile.locator('[data-registry-facet="species"]'); facet.locator('summary').click()
                 rect = facet.locator('.registryFacetPanel').bounding_box(); assert rect['x'] >= 0 and rect['x'] + rect['width'] <= width
                 mobile.screenshot(path=str(ARTIFACTS / f'registry-mobile-{width}.png'), full_page=False)

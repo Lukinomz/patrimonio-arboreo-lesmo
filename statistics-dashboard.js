@@ -51,6 +51,7 @@
   }
   window.renderStatisticsDashboard = function () {
     if(!byId('statisticsDashboard'))return;
+    const trees=municipalScopedTrees();
     const total=trees.length,knownIds=new Set(trees.map(tree=>tree.id));
     const quantities=trees.map(recordQuantity),knownQuantity=quantities.reduce((sum,value)=>sum+(value??0),0),unknownQuantity=quantities.filter(value=>value===null).length,estimatedQuantity=trees.filter(tree=>tree.countEstimated).reduce((sum,tree)=>sum+(recordQuantity(tree)??0),0);
     const alive=trees.filter(tree=>['ok','sick','watch','critical'].includes(tree.status)).length;
@@ -91,7 +92,7 @@
     for(const event of dated)if(event.date.startsWith(activityYear)){const series=SURVEY_TYPES.has(event.type)?0:1;groups[Number(event.date.slice(5,7))-1].values[series]++;if(series===0)surveys++;else works++;}
     byId('analyticsActivityInfo').textContent=`${number(surveys)} ${surveys===1?'rilievo':'rilievi'} · ${number(works)} ${works===1?'intervento':'interventi'}`;
     byId('analyticsActivity').innerHTML=groupedChart(groups,[{label:'Rilievi',color:'#397b56'},{label:'Interventi',color:'#7096a0'}],`Rilievi e interventi mensili nel ${activityYear}`);
-    const annual=lifeAnnualTotals().slice(0,8).reverse();
+    const annual=lifeAnnualTotals(knownIds).slice(0,8).reverse();
     byId('analyticsBalance').innerHTML=annual.length?groupedChart(annual.map(item=>({label:item.year,values:[item.piantumazione,item.abbattimento+item.caduta+item.morte],net:item.piantumazione-item.abbattimento-item.caduta-item.morte})),[{label:'Piantati',color:'#397b56'},{label:'Perdite',color:'#be7861'}],'Bilancio arboreo: piantumazioni e prime perdite datate per anno'):'<div class="analyticsEmpty">Non ci sono ancora piantumazioni o perdite con data registrata.</div>';
     byId('analyticsBalanceInfo').textContent=annual.length?'Conteggi per scheda · saldo sopra ogni anno':'Eventi annuali';
   };

@@ -115,6 +115,7 @@
     if ((data.photos || []).some(p => !p || !safePath(p.relativePath))) throw Error('L’archivio contiene percorsi foto non validi.');
   }
 
+  const archiveLabel=name=>String(name||'Archivio condiviso').replace(/patrionio/gi,match=>match[0]===match[0].toUpperCase()?'Patrimonio':'patrimonio');
   function display() {
     if (!byId('driveStatus')) return;
     byId('driveConnect').disabled = connecting || !!active;
@@ -133,7 +134,7 @@
     }
     for (const id of ['driveURL', 'driveKey', 'driveCreate']) byId(id).disabled = connecting || !!active;
     for (const id of localButtons) if (byId(id)) byId(id).disabled = !!active || connecting;
-    const text = active ? refreshing ? 'Aggiornamento del DB da Google Drive…' : blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + active.name + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Archivio condiviso già configurato. Inserisci la password ricevuta dal responsabile.';
+    const text = active ? refreshing ? 'Aggiornamento del DB da Google Drive…' : blocked || (statusMode === 'saving' ? 'Salvataggio su Google Drive…' : 'Collegato a «' + archiveLabel(active.name) + '» · ' + trees.length + ' alberi. Le modifiche vengono salvate su Drive.') : 'Archivio condiviso già configurato. Inserisci la password ricevuta dal responsabile.';
     byId('driveStatus').textContent = connecting ? 'Collegamento a Google Drive…' : text;
     byId('driveStatus').classList.toggle('error', !!blocked);
     document.body.classList.toggle('driveConnected', !!active);
@@ -142,9 +143,9 @@
     byId('syncStatus').textContent = summary;
     byId('syncStatus').className = blocked ? 'error' : 'ready';
     for (const id of ['archiveDetail', 'archiveWorkDetail', 'workFolderReminder', 'mArchiveDetail']) {
-      if (byId(id)) byId(id).textContent = blocked || 'Google Drive · ' + active.name + ' · ' + trees.length + ' alberi' + (Municipal.assets.length ? ' · ' + Municipal.assets.length + ' arredi / aree / giochi' : '') + ' · ' + photos.filter(p => !p.removed).length + ' foto · ' + (lastSaved ? 'salvato: ' + new Date(lastSaved).toLocaleString('it-IT') : 'archivio vuoto');
+      if (byId(id)) byId(id).textContent = blocked || 'Google Drive · ' + archiveLabel(active.name) + ' · ' + trees.length + ' alberi' + (Municipal.assets.length ? ' · ' + Municipal.assets.length + ' arredi / aree / giochi' : '') + ' · ' + photos.filter(p => !p.removed).length + ' foto · ' + (lastSaved ? 'salvato: ' + new Date(lastSaved).toLocaleString('it-IT') : 'archivio vuoto');
     }
-    if (byId('folderName')) byId('folderName').textContent = '☁ ' + active.name;
+    if (byId('folderName')) byId('folderName').textContent = '☁ ' + archiveLabel(active.name);
     if (byId('folderHint')) byId('folderHint').textContent = 'Archivio condiviso Google Drive';
     if (byId('mBannerContent')) byId('mBannerContent').textContent = blocked || (statusMode === 'saving' ? 'Salvataggio in corso…' : 'Archivio condiviso · ' + (trees.length + Municipal.assets.length) + ' schede');
   }

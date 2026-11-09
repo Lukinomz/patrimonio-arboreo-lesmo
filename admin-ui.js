@@ -5,6 +5,7 @@
   const trashKey = 'LesmoAdminV2Trash', auditKey = 'LesmoAdminV2Audit';
   let logged = false, busy = false, limit = 100, previousInert = false;
   const selection = new Set();
+  window.isMunicipalAdmin=()=>logged&&overlay.classList.contains('open');
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
   const normalized = value => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('it-IT');
   const clone = value => structuredClone(value);
@@ -79,7 +80,7 @@
   }
   function preflight() {
     if (!folderHandle) throw Error('Apri l’archivio prima di modificare gli alberi.');
-    if (quickBusy || v2AnagBusy || backupInProgress || (v2SelectedId && $('v2CensusSave').disabled && v21SurveyStaged.length)) throw Error('Attendi che il salvataggio delle foto o della copia di sicurezza sia terminato.');
+    if (window.municipalBusy || quickBusy || v2AnagBusy || backupInProgress || (v2SelectedId && $('v2CensusSave').disabled && v21SurveyStaged.length)) throw Error('Attendi che il salvataggio delle foto o della copia di sicurezza sia terminato.');
     if (document.body.classList.contains('driveConnected') && $('syncStatus').classList.contains('error')) throw Error('L’app segnala modifiche non salvate. Conserva una copia e aggiorna i dati prima di riprovare.');
   }
   function rememberState() { return {trees, historyEvents, photos, seq, lastSaved}; }
@@ -167,7 +168,7 @@
   $('adminClose').onclick = hide;
   overlay.addEventListener('click', event => { if (event.target === overlay) hide(); });
   document.addEventListener('keydown', event => {
-    if (!overlay.classList.contains('open')) return;
+    if (!overlay.classList.contains('open') || document.querySelector('dialog[open]')) return;
     if (event.key === 'Escape') { event.preventDefault(); hide(); }
     if (event.key === 'Tab') {
       const controls = [...overlay.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(control => !control.disabled && control.getClientRects().length);
@@ -192,6 +193,7 @@
   $('adminDeleteTree').onclick = deleteSelected;
   $('adminTrashList').onclick = event => { const button = event.target.closest('[data-restore]'); if (button) restoreEntry(button.dataset.restore, button.dataset.restoreTree); };
   $('adminBackup').onclick = () => { if (logged && !busy) expJSON(); };
+  const contextTile=document.createElement('article');contextTile.className='adminTile';contextTile.innerHTML='<strong>Contesti e parchi</strong><p>Crea e modifica parchi, vie e altri luoghi a cui associare alberi, arredi e giochi.</p><button class="btn main" type="button" id="adminContexts">Gestisci contesti e parchi</button>'; $('adminContent').prepend(contextTile);$('adminContexts').onclick=()=>{if(logged&&!busy)window.openMunicipalContexts?.();};
   window.addEventListener('storage', event => { if (logged && !busy && [trashKey, auditKey].includes(event.key)) render(); });
   const previousRefresh = refresh;
   refresh = function(...args) { const result = previousRefresh(...args); if (logged && !busy) render(); return result; };

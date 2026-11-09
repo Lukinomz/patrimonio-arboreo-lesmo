@@ -1218,7 +1218,9 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <link rel="stylesheet" href="statistics-dashboard.css?v=1"/>
 <script src="statistics-dashboard.js?v=2"></script>
 <link rel="stylesheet" href="group-census.css?v=1"/>
-<script src="group-census.js?v=2"></script>
+<script src="group-census.js?v=3"></script>
+<script src="municipal-data.js?v=1"></script>
+<link rel="stylesheet" href="municipal.css?v=1"/>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
@@ -1654,7 +1656,7 @@ function showTreeMapCard(t){
 function drawPins(){
  const e=$('pins'),r=$('map').getBoundingClientRect(),fr=document.createDocumentFragment();e.textContent='';let shown=0;
  for(const t of trees){
-  if(!isValid(t)||hasGroupArea(t))continue;
+  if(!Municipal.layers.trees||!isValid(t)||hasGroupArea(t))continue;
   if(!mapVisibleStates.has(MAP_STATUS_ORDER.includes(t.status)?t.status:'unknown'))continue;
   const p=mapFromLL(+t.lat,+t.lon);if(p.x < -22||p.x>r.width+22||p.y< -22||p.y>r.height+22)continue;
   const b=document.createElement('button');b.className='pin '+(t.status||'unknown')+(focusedTreeId===t.id?' focused':'');b.type='button';b.style.left=p.x+'px';b.style.top=p.y+'px';
@@ -1668,7 +1670,7 @@ function drawPins(){
   b.addEventListener('click',ev=>{ev.stopPropagation();showTreeMapCard(t)});
   fr.appendChild(b);shown++;if(shown>=3000)break;
  }
- e.appendChild(fr);updateMapStatusCounts(shown+drawGroupAreas());
+ e.appendChild(fr);updateMapStatusCounts(shown+drawGroupAreas());window.drawMunicipalMap?.();
  if(popupTreeId&&(!trees.some(t=>t.id===popupTreeId&&isValid(t)&&mapVisibleStates.has(t.status||'unknown')))){popupTreeId=null;$('treeMapCard').classList.add('hidden')}
 }
 
@@ -1686,7 +1688,7 @@ function startAdd(){
  if(document.body.classList.contains('mobileMode'))tell('Ora seleziona un albero dalla mappa. Premi “Annulla selezione” per uscire.');
  else showMapSelectionInstruction();
 }
-function showAddChoice(){
+function showAddChoice(){if(window.Municipal&&Municipal.categoryFilter!=='trees'){showMunicipalChoice();return;}
  $('addTreeChoice').classList.remove('hidden');
  $('chooseMapTree').focus();
 }
@@ -1770,15 +1772,16 @@ async function impCSV(file){try{if(!folderHandle)throw Error('Collega prima la c
 async function impJSON(file){
  if(!folderHandle){tell('Seleziona prima la cartella di archivio.');return;}
  try{const data=JSON.parse(await file.text());if(!Array.isArray(data.trees))throw Error('Formato backup non valido');
-  const good=data.trees.filter(isTree);if(!confirm('ATTENZIONE: il ripristino sostituirà '+trees.length+' alberi con '+good.length+' alberi del backup. Sarà creato prima un backup automatico dell’archivio attuale. Continuare?'))return;
+  municipalValidate(data);if(data.trees.some(t=>!isTree(t)))throw Error('Il backup contiene schede non valide');const previous=structuredClone(dataSnapshot());const good=data.trees;if(!confirm('ATTENZIONE: il ripristino sostituirà '+trees.length+' alberi con '+good.length+' alberi del backup. Sarà creato prima un backup automatico dell’archivio attuale. Continuare?'))return;
   await createBackup(true);
   if(Array.isArray(data.images))for(const pic of data.images){if(!pic.base64||!pic.relativePath||!safePath(pic.relativePath))continue;const bytes=base64ToUint8(pic.base64);await writePhotoPath(pic.relativePath,new Blob([bytes],{type:pic.mime||'image/jpeg'}));}
-  trees=good;historyEvents=Array.isArray(data.history)?data.history:[];photos=Array.isArray(data.photos)?data.photos:[];
-  seq=Math.max(Number(data.nextId)||1,1,...trees.map(t=>(Number(String(t.id).split('-').pop())||0)+1));await saveArchive();refresh();tell('Backup ripristinato: '+trees.length+' alberi.');
+  loadMunicipalData(data);trees=good;historyEvents=Array.isArray(data.history)?data.history:[];photos=Array.isArray(data.photos)?data.photos:[];
+  seq=Math.max(Number(data.nextId)||1,1,...trees.map(t=>(Number(String(t.id).split('-').pop())||0)+1));try{await saveArchive()}catch(ex){trees=previous.trees;historyEvents=previous.history;photos=previous.photos;seq=previous.nextId;loadMunicipalData(previous);throw ex}refresh();tell('Backup ripristinato: '+trees.length+' alberi.');
  }catch(ex){tell('Ripristino non riuscito: '+ex.message);console.error(ex)}
 }
 function initTouch(){const map=$('map');map.addEventListener('pointerdown',e=>{if(e.button&&e.button!==0)return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});try{map.setPointerCapture(e.pointerId)}catch(_){}if(pointers.size===1){let c=centerWorld();start={x:e.clientX,y:e.clientY,cx:c.x,cy:c.y};moved=false;map.classList.add('dragging')}else if(pointers.size===2){const p=[...pointers.values()];pinchBase=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);moved=true}});map.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size>=2){let p=[...pointers.values()],dist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchBase&&dist>pinchBase*1.35){zoom(1);pinchBase=dist}else if(pinchBase&&dist<pinchBase*.72){zoom(-1);pinchBase=dist}return}if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;recenterPixels(start.cx-dx,start.cy-dy)});function end(e){if(!pointers.has(e.pointerId))return;const p=pointers.get(e.pointerId);pointers.delete(e.pointerId);map.classList.remove('dragging');if(pointers.size===0){if(e.type!=='pointercancel'&&!moved&&isGroupAreaDrawing()){const pos=getRelative(e),geo=mapToLL(pos.x,pos.y);addGroupAreaPoint(geo);}
  else if(!moved&&addMode){const pos=getRelative(e),geo=mapToLL(pos.x,pos.y);
+  if(window.municipalMapPick){window.municipalMapPick(geo);start=null;pinchBase=0;return;}
   const existing=placingTreeId?trees.find(x=>x.id===placingTreeId):null;
   if(existing){v2OpenAnag(existing,geo.lat.toFixed(6),geo.lon.toFixed(6));}
   else v2OpenAnag(null,geo.lat.toFixed(6),geo.lon.toFixed(6));}start=null;pinchBase=0}else{start=null;pinchBase=0}}map.addEventListener('pointerup',end);map.addEventListener('pointercancel',end);map.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1:-1)},{passive:false});map.addEventListener('dblclick',e=>{e.preventDefault();zoom(1)})}
@@ -1842,11 +1845,11 @@ async function loadFolder(handle,{allowCreate=true}={}){
   if(localData.trees.some(t=>!isTree(t)))throw Error('alberi.json contiene alberi non validi. Nessuna scheda verrà ignorata o cancellata.');
   if(localData.history!=null&&!Array.isArray(localData.history))throw Error('Lo storico del database non è valido. Nessuna modifica effettuata.');
   if(localData.photos!=null&&!Array.isArray(localData.photos))throw Error('L’archivio fotografie non è valido. Nessuna modifica effettuata.');
-  nextTrees=localData.trees;nextHistory=localData.history||[];nextPhotos=localData.photos||[];
+  municipalValidate(localData);nextTrees=localData.trees;nextHistory=localData.history||[];nextPhotos=localData.photos||[];
   nextSeq=Math.max(Number(localData.nextId)||1,1,...nextTrees.map(t=>(Number(String(t.id).split('-').pop())||0)+1));nextSaved=localData.saved||'';
  }
  // Conserva la memoria corrente in caso di permessi insufficienti o problemi nel rendering.
- const previous={trees,historyEvents,photos,seq,lastSaved,folderHandle};
+ const previous={trees,historyEvents,photos,seq,lastSaved,folderHandle,municipal:municipalSnapshot()};
  try{
   // Le directory si creano soltanto dopo la validazione del database.
   await handle.getDirectoryHandle('Foto',{create:true});await handle.getDirectoryHandle('Backup',{create:true});
@@ -1855,11 +1858,11 @@ async function loadFolder(handle,{allowCreate=true}={}){
    fileHandle=await handle.getFileHandle('alberi.json',{create:true});const writer=await fileHandle.createWritable();
    try{await writer.write(initial);await writer.close()}catch(ex){try{await writer.abort()}catch(_e){}throw ex}
   }
-  trees=nextTrees;historyEvents=nextHistory;photos=nextPhotos;seq=nextSeq;lastSaved=nextSaved;folderHandle=handle;
+  loadMunicipalData(localData||{});trees=nextTrees;historyEvents=nextHistory;photos=nextPhotos;seq=nextSeq;lastSaved=nextSaved;folderHandle=handle;
   refresh();updateArchiveUI();clearArchiveConnectMessage();
   try{const old=JSON.parse(localStorage.getItem(STORE)||'{}');$('importOld').classList.toggle('hidden',!Array.isArray(old.trees)||!old.trees.length)}catch(ex){$('importOld').classList.add('hidden')}
   return true;
- }catch(ex){trees=previous.trees;historyEvents=previous.historyEvents;photos=previous.photos;seq=previous.seq;lastSaved=previous.lastSaved;folderHandle=previous.folderHandle;try{refresh();updateArchiveUI()}catch(_){}throw ex}
+ }catch(ex){loadMunicipalData({...previous.municipal,trees:previous.trees});trees=previous.trees;historyEvents=previous.historyEvents;photos=previous.photos;seq=previous.seq;lastSaved=previous.lastSaved;folderHandle=previous.folderHandle;try{refresh();updateArchiveUI()}catch(_){}throw ex}
 }
 async function chooseArchive(){
  if(!window.showDirectoryPicker){archiveConnectMessage('selettore',{name:'API non disponibile',message:'La selezione diretta di cartelle non è disponibile in questo browser/contesto.'});return;}
@@ -1878,7 +1881,7 @@ async function restoreFolderShortcut(){
   if(p==='granted'){await loadFolder(h,{allowCreate:false})}else{updateArchiveUI();$('folderHint').textContent='Per continuare, ricollega la cartella che contiene alberi.json.';}
  }catch(ex){updateArchiveUI();console.warn('Collegamento automatico non riuscito: nessun dato modificato',ex)}
 }
-function dataSnapshot(){return{schema:4,app:'Comune di Lesmo Patrimonio Arboreo',saved:new Date().toISOString(),nextId:seq,trees,history:historyEvents,photos}}
+function dataSnapshot(){return{schema:4,app:'Comune di Lesmo Patrimonio Arboreo',saved:new Date().toISOString(),nextId:seq,trees,history:historyEvents,photos,...municipalSnapshot()}}
 async function saveArchive(){
  if(!folderHandle)throw Error('Collega prima una cartella sul PC.');
  const snapshot=JSON.stringify(dataSnapshot(),null,2),h=folderHandle;
@@ -1969,12 +1972,13 @@ function photoCount(id){return photos.filter(p=>p.treeId===id&&!p.removed).lengt
 function lastActivity(id){return historyEvents.filter(e=>e.treeId===id).sort((a,b)=>String(b.date||b.created).localeCompare(String(a.date||a.created)))[0]||null}
 function esc(s){return escapeHTML(s)}
 function statusChip(t){return `<span class="chip ${esc(t.status||'unknown')}">${esc(statusName[t.status]||'Non valutato')}</span>`}
-function openTree(id){const t=trees.find(t=>t.id===id);if(t)openEditor(t)}
-function goToTree(id){const t=trees.find(t=>t.id===id);if(!t)return;focusedTreeId=id;if(!isValid(t)){tell('Questo albero non ha coordinate GPS.');openTree(id);return}mp.lat=+t.lat;mp.lon=+t.lon;mp.z=Math.max(mp.z,17);resetTiles();switchSection('mappa');draw();openTree(id)}
+function openTree(id){const t=municipalRecord(id);if(t?.assetKind){openMunicipalDetail(t);return}if(t)openEditor(t)}
+function goToTree(id){const t=municipalRecord(id);if(!t)return;focusedTreeId=id;if(!isValid(t)){tell('Questo albero non ha coordinate GPS.');openTree(id);return}mp.lat=+t.lat;mp.lon=+t.lon;mp.z=Math.max(mp.z,17);resetTiles();switchSection('mappa');draw();openTree(id)}
 function noRows(cols,message){return `<tr><td colspan="${cols}" style="text-align:center;padding:35px;color:#819385">${esc(message)}</td></tr>`}
 function renderDashboard(){
  if(!$('overviewRows'))return;
- const active=trees.filter(t=>!OUT_OF_STOCK_STATUSES.has(t.status)),located=trees.filter(isValid).length,photoTotal=photos.filter(p=>!p.removed).length;
+ const treeIds=new Set(trees.map(t=>t.id));
+ const active=trees.filter(t=>!OUT_OF_STOCK_STATUSES.has(t.status)),located=trees.filter(isValid).length,photoTotal=photos.filter(p=>!p.removed&&treeIds.has(p.treeId)).length;
  const n=(id,v)=>$(id).textContent=v.toLocaleString('it-IT');
  n('kAll',trees.length);n('kLocated',located);n('kWatch',trees.filter(t=>t.status==='watch').length);n('kCritical',trees.filter(t=>t.status==='critical').length);n('kPhotos',photoTotal);
  const today=localDay(),late=t=>!OUT_OF_STOCK_STATUSES.has(t.status)&&!!t.nextCheck&&t.nextCheck<today;
@@ -1983,7 +1987,7 @@ function renderDashboard(){
  const livingCount=trees.filter(t=>liveStatuses.includes(t.status)).length;
  for(const [id,key] of [['sHealthy','ok'],['sSick','sick'],['sWatchAlive','watch'],['sCriticalAlive','critical'],['sDead','dead'],['sCut','cut'],['sFallen','fallen'],['sUnknownState','unknown'],['sRemovedLegacy','removed']])n(id,trees.filter(t=>t.status===key).length);
  n('sAlive',livingCount);n('sRegistered',trees.length);
- n('sTotal',trees.length);n('sEvents',historyEvents.length);n('sWithPhotos',new Set(photos.filter(p=>!p.removed&&p.treeId).map(p=>p.treeId)).size);n('sSpecies',new Set(trees.map(t=>(t.species||'').trim().toLowerCase()).filter(x=>x&&x!=='non identificata')).size);
+ n('sTotal',trees.length);n('sEvents',historyEvents.filter(e=>treeIds.has(e.treeId)).length);n('sWithPhotos',new Set(photos.filter(p=>!p.removed&&treeIds.has(p.treeId)).map(p=>p.treeId)).size);n('sSpecies',new Set(trees.map(t=>(t.species||'').trim().toLowerCase()).filter(x=>x&&x!=='non identificata')).size);
  renderRegistryTable();
  const mq=$('monitorSearch').value.toLocaleLowerCase('it-IT').trim(),mf=$('monitorFilter').value;
  const attention=t=>t.status==='sick'||t.status==='watch'||t.status==='critical'||late(t);
@@ -1991,7 +1995,7 @@ function renderDashboard(){
  const monitored=trees.filter(t=>(mf==='all'||(mf==='attention'&&attention(t))||(mf==='late'&&late(t))||(mf==='no-photo'&&photoCount(t.id)===0)||(mf==='no-gps'&&!isValid(t)))&&[publicCode(t),t.id,t.species,t.address,t.notes].join(' ').toLocaleLowerCase('it-IT').includes(mq)).sort((a,b)=>priority(a)-priority(b)||String(a.nextCheck||'9999').localeCompare(String(b.nextCheck||'9999'))||a.id.localeCompare(b.id,'it',{numeric:true}));
  $('monitorRows').innerHTML=monitored.slice(0,150).map(t=>{const last=lastActivity(t.id);return `<tr><td><button class="codeLink" data-tree="${esc(t.id)}">${esc(publicCode(t))}</button><div style="margin-top:3px;color:#758a7c">${esc(t.species||'Non identificata')}</div></td><td>${esc(t.address||'—')}</td><td>${statusChip(t)}</td><td>${last?esc(last.date||last.created?.slice(0,10)||'—'):'—'}<div style="font-size:10px;color:#94a398">${last?esc(typeLabel[last.type]||last.type):''}</div></td><td>${t.nextCheck?`<span class="${late(t)?'chip critical':'chip'}">${esc(t.nextCheck)}${late(t)?' · Scaduta':''}</span>`:'—'}</td><td>${photoCount(t.id)}</td><td><button class="tinyBtn" data-tree="${esc(t.id)}">Apri scheda ↗</button>${isValid(t)?` <button class="tinyBtn" data-street="${esc(t.id)}">Street View ↗</button>`:''}</td></tr>`}).join('')||noRows(7,'Nessuna verifica da gestire con questi filtri.');
  $('monitorCount').textContent=monitored.length.toLocaleString('it-IT')+' alberi · '+Math.min(150,monitored.length)+' visualizzati';
- $('activityFeed').innerHTML=historyEvents.slice().sort((a,b)=>String(b.date||b.created).localeCompare(String(a.date||a.created))).slice(0,25).map(e=>`<div class="activityItem"><span class="activityDot">♣</span><div><strong><button class="codeLink" data-tree="${esc(e.treeId||'')}">${esc(publicCode(trees.find(t=>t.id===e.treeId))||e.treeId||'—')}</button> · ${esc(typeLabel[e.type]||e.type)}</strong><small>${esc(e.date||e.created?.slice(0,10)||'—')}</small><p>${esc(e.description||'')}</p></div></div>`).join('')||'<div class="empty">Lo storico sarà visibile quando inserirai il primo albero o un intervento.</div>';
+ $('activityFeed').innerHTML=historyEvents.slice().sort((a,b)=>String(b.date||b.created).localeCompare(String(a.date||a.created))).slice(0,25).map(e=>`<div class="activityItem"><span class="activityDot">♣</span><div><strong><button class="codeLink" data-tree="${esc(e.treeId||'')}">${esc(publicCode(municipalRecord(e.treeId))||e.treeId||'—')}</button> · ${esc(typeLabel[e.type]||e.type)}</strong><small>${esc(e.date||e.created?.slice(0,10)||'—')}</small><p>${esc(e.description||'')}</p></div></div>`).join('')||'<div class="empty">Lo storico sarà visibile quando inserirai il primo albero o un intervento.</div>';
  const colors={ok:'#24945f',sick:'#f0c83f',watch:'#e6a12d',critical:'#d94e45',dead:'#6a3944',cut:'#788289',fallen:'#9b704d',unknown:'#96a7a9',removed:'#a0a4a9'};
  const statusList=['ok','sick','watch','critical','dead','cut','fallen','unknown','removed'].map(key=>({name:statusName[key],value:trees.filter(t=>t.status===key).length,color:colors[key]}));renderBars('statusChart',statusList);
  const counts=new Map();for(const t of trees){const key=(t.species||'Non identificata').trim()||'Non identificata';counts.set(key,(counts.get(key)||0)+1)}
@@ -2020,7 +2024,7 @@ function nextPublicCode(){
 function validateCode(code,exceptId){if(!code||code.length>50||/[<>\r\n]/.test(code)||/^[=+@]/.test(code)){tell('Codice obbligatorio (massimo 50 caratteri; evita simboli come =, + o @).');$('publicCode').focus();return false}
  const duplicate=getByCode(code);if(duplicate&&duplicate.id!==exceptId){tell('Codice già assegnato a un altro albero: '+publicCode(duplicate));$('publicCode').focus();return false}return true}
 function nextTechnicalId(){let id;do{id='LES-'+String(seq++).padStart(6,'0')}while(trees.some(t=>t.id===id));return id}
-function makeTreeSnapshot(t){return{...groupSnapshot(t),initialObservationNotes:firstObservationNotes(t),surveyNotes:t.surveyNotes||'',code:publicCode(t),scientificName:t.scientificName||'',siteType:t.siteType||'',crownDiameter:t.crownDiameter??null,priority:t.priority||'',species:t.species||'',status:t.status||'unknown',height:t.height??null,diameter:t.diameter??null,address:t.address||'',lat:isValid(t)?Number(t.lat):null,lon:isValid(t)?Number(t.lon):null,notes:t.notes||''}}
+function makeTreeSnapshot(t){return{areaId:t.areaId||null,positionMeta:t.positionMeta||null,...groupSnapshot(t),initialObservationNotes:firstObservationNotes(t),surveyNotes:t.surveyNotes||'',code:publicCode(t),scientificName:t.scientificName||'',siteType:t.siteType||'',crownDiameter:t.crownDiameter??null,priority:t.priority||'',species:t.species||'',status:t.status||'unknown',height:t.height??null,diameter:t.diameter??null,address:t.address||'',lat:isValid(t)?Number(t.lat):null,lon:isValid(t)?Number(t.lon):null,notes:t.notes||''}}
 function parseOptionalNumber(s){if(String(s??'').trim()==='')return null;const v=num(s);return Number.isFinite(v)?v:null}
 let photoIndex=null,surveyIndex=null,activityIndex=null,surveyDateIndex=null;
 function rebuildLookup(){photoIndex=new Map();surveyIndex=new Map();activityIndex=new Map();surveyDateIndex=new Map();
@@ -2119,7 +2123,7 @@ function renderHistoricalView(){
  const records=historyEvents.filter(e=>{const t=treeLookup.get(e.treeId),test=[publicCode(t),t?.species,t?.address,e.description,e.source,e.operator].join(' ').toLocaleLowerCase('it-IT');if(q&&!test.includes(q))return false;if(from&&(e.date||'')<from)return false;if(to&&(e.date||'')>to)return false;
  return type==='all'||(type==='survey'&&SURVEY_TYPES.has(e.type))||(type==='work'&&WORK_TYPES.has(e.type))||(type==='photo'&&['fotografia','foto_esclusa'].includes(e.type))||(type==='modifica'&&e.type==='modifica')}).sort(historyOrder);
  const limit=75,max=Math.max(1,Math.ceil(records.length/limit));historicalPage=Math.max(0,Math.min(historicalPage,max-1));
- $('globalHistoryRows').innerHTML=records.slice(historicalPage*limit,(historicalPage+1)*limit).map(e=>{const t=treeLookup.get(e.treeId),snap=e.snapshot||{},details=e.description||'';return `<tr><td>${esc(e.date||'—')}</td><td><button class="codeLink" data-tree="${esc(e.treeId)}">${esc(publicCode(t)||e.treeId)}</button></td><td><span class="lfTag">${esc(typeLabel[e.type]||e.type)}</span></td><td>${snap.status?statusChip({status:snap.status}):'—'}</td><td>${esc(e.source||'—')}<div class="colNote">${esc(e.operator||'')}</div></td><td><div class="colNote">${esc(details.slice(0,220))}</div></td><td>${esc((e.created||'').slice(0,10)||'—')}</td></tr>`}).join('')||noRows(7,'Nessun rilievo o evento corrisponde ai filtri.');
+ $('globalHistoryRows').innerHTML=records.slice(historicalPage*limit,(historicalPage+1)*limit).map(e=>{const t=municipalRecord(e.treeId),snap=e.snapshot||{},details=e.description||'';return `<tr><td>${esc(e.date||'—')}</td><td><button class="codeLink" data-tree="${esc(e.treeId)}">${esc(publicCode(t)||e.treeId)}</button></td><td><span class="lfTag">${esc(typeLabel[e.type]||e.type)}</span></td><td>${snap.status?statusChip({status:snap.status}):'—'}</td><td>${esc(e.source||'—')}<div class="colNote">${esc(e.operator||'')}</div></td><td><div class="colNote">${esc(details.slice(0,220))}</div></td><td>${esc((e.created||'').slice(0,10)||'—')}</td></tr>`}).join('')||noRows(7,'Nessun rilievo o evento corrisponde ai filtri.');
  $('historyCount').textContent=records.length.toLocaleString('it-IT')+' eventi';$('historyPage').textContent='Pagina '+(historicalPage+1)+' / '+max;$('historyPrev').disabled=historicalPage===0;$('historyNext').disabled=historicalPage>=max-1;
 }
 // Manteniamo la logica dell'archivio precedente e ampliamo le viste.
@@ -2601,7 +2605,7 @@ function v2OpenAnag(t=null,latitude,longitude){
  if(t&&!fromMap)v2D('v21InitialNotes').value=firstObservationNotes(t);
  v2D('v21InitialOnly').classList.toggle('hidden',!!t);v2D('v21InitialDate').required=!t;v21OriginToggle();
  loadGroupEditor(t,fromMap?v2AnaMapDraft?.group:null);
- v2AnaMapDraft=null;v2RenderAnaPhotos();v2D('v2AnaPhotoFeedback').className='v2AnaPhotoMsg';v2D('v2AnaPhotoFeedback').textContent='Foto facoltative: verranno salvate con questo albero, senza comprimere i file originali.';
+ window.loadMunicipalTreeFields?.(t,fromMap);v2AnaMapDraft=null;v2RenderAnaPhotos();v2D('v2AnaPhotoFeedback').className='v2AnaPhotoMsg';v2D('v2AnaPhotoFeedback').textContent='Foto facoltative: verranno salvate con questo albero, senza comprimere i file originali.';
  v2D('v2AnagOverlay').classList.remove('hidden');v2D('v2AnaCode').focus();
 }
 async function v2SaveAnag(e){
@@ -2610,7 +2614,7 @@ async function v2SaveAnag(e){
  const code=/^LESMO-A\d+$/i.test(enteredCode)&&(!editingCodeTree||enteredCode!==publicCode(editingCodeTree))?publicCodeKey(enteredCode):enteredCode,species=v2D('v2AnaSpecies').value.trim();v2D('v2AnaCode').value=code;
  if(!code||code.length>50||/[<>\r\n]/.test(code)||/^[=+@]/.test(code))return v2CodeWarning('Codice identificativo non valido.');
  if(!species)return v2Warn('Indica la specie o “Non identificata”.');
- const dupe=getByCode(code);if(dupe&&dupe.id!==v2AnagId)return v2CodeWarning('Codice già utilizzato da '+publicCode(dupe)+'. Scegli un codice libero: nessun albero è stato modificato.');
+ const dupe=allMunicipalRecords().find(r=>publicCodeKey(r.code||r.id)===publicCodeKey(code));if(dupe&&dupe.id!==v2AnagId)return v2CodeWarning('Codice già utilizzato da '+publicCode(dupe)+'. Scegli un codice libero: nessun albero è stato modificato.');
  const groupFields=readGroupEditor();if(!groupFields)return;
  const lat=v2Number('v2AnaLat'),lon=v2Number('v2AnaLon');
  if((lat===null)!==(lon===null))return v2Warn('Indica entrambe le coordinate oppure lasciale vuote.');
@@ -2628,8 +2632,8 @@ async function v2SaveAnag(e){
  const t={...(prior||{id,status:'unknown',height:null,diameter:null,crownDiameter:null,priority:'',date:'',nextCheck:'',notes:'',source:'Anagrafica 2.0',created:now}),code,species,scientificName:v2D('v2AnaScientific').value.trim(),address:v2D('v2AnaAddress').value.trim(),siteType:v2D('v2AnaSite').value,placement:v2D('v2AnaPlacement').value.trim(),notes:prior?.notes||'',initialObservationNotes:v2D('v21InitialNotes').value.trim(),lat,lon,modified:now};
  if(!prior){Object.assign(t,{origin,plantDate:origin==='planted'?plantDate:null,status:initialStatus,height:initialHeight,diameter:initialDiameter,crownDiameter:initialCrown,notes:initialNotes,date:initialDate});}
  if(prior&&prior.notes===firstObservationNotes(prior))t.notes=t.initialObservationNotes;
- Object.assign(t,groupFields);
- const identityKeys=['code','species','scientificName','address','siteType','placement','lat','lon','notes','initialObservationNotes','recordType','treeCount','countEstimated','stemCount','stemDiameters','diameter','geometry'];
+ Object.assign(t,groupFields,window.readMunicipalTreeFields?.(prior)||{});
+ const identityKeys=['code','species','scientificName','address','siteType','placement','lat','lon','notes','initialObservationNotes','recordType','treeCount','countEstimated','stemCount','stemDiameters','diameter','geometry','areaId','positionMeta'];
  const changes=prior?identityKeys.filter(k=>JSON.stringify(prior[k]??null)!==JSON.stringify(t[k]??null)):identityKeys;
  if(!changes.length&&!v2AnaPhotos.length){v2CloseAnag();tell('Nessuna modifica anagrafica.');return;}
  const saveBtn=v2D('v2AnaSave');v2AnagBusy=true;saveBtn.disabled=true;saveBtn.textContent='Salvataggio in corso…';
@@ -2667,7 +2671,7 @@ function v2Detail(t){if(!t)return;
  const metrics=[['Stato',statusName[t.status]||'Non valutato'],['Codice',publicCode(t)],['Specie',t.species||'—'],['Nome scientifico',t.scientificName||'—'],['Via/località',t.address||'—'],['Posizione',t.placement||'—'],['Contesto',treeContextLabel(t)],['GPS',isValid(t)?Number(t.lat).toFixed(6)+', '+Number(t.lon).toFixed(6):'Da posizionare'],['Ultimo rilievo',t.date||'Non disponibile'],['Altezza',t.height==null?'—':t.height+' m'],[t.recordType==='multistem'?'Diametro equivalente':'Diametro tronco',t.diameter==null?'—':formatTreeDiameter(t.diameter)+' cm'],['Diametro chioma',formatTreeCrown(t)],['Fotografie',photoCount(t.id)],['Prossima verifica',t.nextCheck||'Non programmata']];
  const safe=esc;
  v2D('v2DetailContent').innerHTML='<div class="v2DetailGrid">'+metrics.map(([k,v])=>`<div class="v2DetailCell"><small>${safe(k)}</small><b>${safe(v)}</b></div>`).join('')+'</div><p class="v2Muted">Dati identificativi modificabili solo da Anagrafica; osservazioni e misure solo da Censimento, eventi da Monitoraggio.</p>';
- showGroupAndNotesDetail(t);
+ showGroupAndNotesDetail(t);window.showMunicipalTreeDetail?.(t);
  v2D('v2DetailOverlay').classList.remove('hidden');
 }
 function v2OpenPhotos(id){const t=trees.find(x=>x.id===id);if(!t)return v2Warn('Seleziona un albero esistente.');v2CloseDetail();v2CloseAnag();v2OldOpenEditor(t);v2PhotoMode=true;v2D('modalCover').classList.add('v2PhotoMode');v2D('modalTitle').textContent='Fotografie · '+publicCode(t);}
@@ -2847,7 +2851,7 @@ v2SaveCensus=async function(e){e.preventDefault();const t=trees.find(x=>x.id===v
  const snapshot={...makeTreeSnapshot(t),...stemFields,status:nextStatus,height:measures[0]??t.height??null,diameter:stemFields?.diameter??measures[1]??t.diameter??null,crownDiameter:measures[2]??t.crownDiameter??null,priority:$('v2CensusPriority').value||t.priority||'',nextCheck:$('v2CensusNext').value||t.nextCheck||'',notes:t.notes||'',surveyNotes:$('v2CensusNote').value.trim()||t.surveyNotes||''};
  if(!older){Object.assign(t,{status:nextStatus,height:snapshot.height,diameter:snapshot.diameter,crownDiameter:snapshot.crownDiameter,priority:snapshot.priority,nextCheck:snapshot.nextCheck,notes:snapshot.notes,surveyNotes:snapshot.surveyNotes,...stemFields,date:dt,modified:now});}
  const count=historyEvents.filter(x=>x.treeId===t.id&&SURVEY_TYPES.has(x.type)).length;
- const event={id:uniqueID(),treeId:t.id,type:count?'rilievo':'censimento',date:dt,created:now,operator:$('v2CensusOperator').value.trim(),description:$('v2CensusNote').value.trim()||'Rilevazione',source:'Rilevazioni V2.1',before:makeTreeSnapshot(previous),snapshot:{...snapshot,code:publicCode(t),species:t.species,address:t.address,lat:t.lat,lon:t.lon,measured:{height:measures[0]!==null,diameter:measures[1]!==null,crownDiameter:measures[2]!==null}}};
+ const event={id:uniqueID(),treeId:t.id,type:count?'rilievo':'censimento',date:dt,created:now,operator:$('v2CensusOperator').value.trim(),description:$('v2CensusNote').value.trim()||'Rilevazione',source:'Rilevazioni V2.1',referenceSurveyId:window.municipalSurveyReference||null,before:makeTreeSnapshot(previous),snapshot:{...snapshot,code:publicCode(t),species:t.species,address:t.address,lat:t.lat,lon:t.lon,measured:{height:measures[0]!==null,diameter:measures[1]!==null,crownDiameter:measures[2]!==null}}};
  historyEvents.push(event);const typ=({dead:'morte',cut:'abbattimento',fallen:'caduta'})[life];const addLoss=!!typ&&life!==oldStatus&&!historyEvents.some(ev=>ev.treeId===t.id&&ev.type===typ&&!ev.cancelled&&ev.id!==event.id&&ev.date===dt);
  if(addLoss)historyEvents.push({id:uniqueID(),treeId:t.id,type:typ,date:dt,created:now,linkedEventId:event.id,description:'Evento rilevato durante ispezione: '+(event.description||typ),source:'Rilevazioni V2.1',operator:event.operator,before:makeTreeSnapshot(previous),snapshot:makeTreeSnapshot(t)});
  try{await saveArchive()}catch(error){Object.assign(t,previous);historyEvents.length=prevEvents;v2Warn('Impossibile salvare la rilevazione: '+error.message);return}
@@ -3082,7 +3086,7 @@ function mBlobBase64(b){return new Promise((resolve,reject)=>{const r=new FileRe
 async function mOpenLocal(){
  try{
   mDB=await mIDBOpen();const raw=await mIDBGet('data','archive');
-  if(raw){const d=JSON.parse(raw);if(!Array.isArray(d.trees)||d.trees.some(t=>!isTree(t))||!Array.isArray(d.history||[])||!Array.isArray(d.photos||[]))throw Error('Archivio locale non valido. Non verrà sovrascritto.');trees=d.trees;historyEvents=d.history||[];photos=d.photos||[];seq=Math.max(Number(d.nextId)||1,1,...trees.map(t=>(Number(String(t.id).split('-').pop())||0)+1));lastSaved=d.saved||'';}
+  if(raw){const d=JSON.parse(raw);if(!Array.isArray(d.trees)||d.trees.some(t=>!isTree(t))||!Array.isArray(d.history||[])||!Array.isArray(d.photos||[]))throw Error('Archivio locale non valido. Non verrà sovrascritto.');loadMunicipalData(d);trees=d.trees;historyEvents=d.history||[];photos=d.photos||[];seq=Math.max(Number(d.nextId)||1,1,...trees.map(t=>(Number(String(t.id).split('-').pop())||0)+1));lastSaved=d.saved||'';}
   // This handle is a readiness sentinel only: all mobile writes are routed to IndexedDB.
   folderHandle={name:'Memoria del dispositivo'};mArchiveReady=true;mArchiveProblem='';refresh();updateArchiveUI('ready');
  }catch(ex){console.error('Archivio locale mobile',ex);mArchiveProblem=ex.message;mArchiveReady=false;folderHandle=null;updateArchiveUI('error');}
@@ -3092,15 +3096,15 @@ async function mImportBackup(file){
  try{
   const text=await file.text(),d=JSON.parse(text);
   if(!Array.isArray(d.trees)||d.trees.some(t=>!isTree(t))||d.history!=null&&!Array.isArray(d.history)||d.photos!=null&&!Array.isArray(d.photos))throw Error('Backup non valido: struttura dati errata');
-  const newHistory=d.history||[],newPhotos=d.photos||[],sourceImages=Array.isArray(d.images)?d.images:[];
+  municipalValidate(d);const newHistory=d.history||[],newPhotos=d.photos||[],sourceImages=Array.isArray(d.images)?d.images:[];
   if(newPhotos.some(p=>!p.removed&&p.relativePath)&&!sourceImages.length)throw Error('Il file contiene riferimenti a fotografie, ma non le immagini. Importa un backup COMPLETO, non alberi.json.');
   const pathSet=new Set(),nextImages=[];for(const pic of sourceImages){if(!pic.base64||!safePath(pic.relativePath))throw Error('Una fotografia del backup non è valida');if(pathSet.has(pic.relativePath))continue;pathSet.add(pic.relativePath);const bytes=base64ToUint8(pic.base64);nextImages.push({key:pic.relativePath,blob:new Blob([bytes],{type:pic.mime||'image/jpeg'})})}
   if(newPhotos.some(p=>!p.removed&&p.relativePath&&!pathSet.has(p.relativePath)))throw Error('Backup incompleto: alcune fotografie mancano');
   if(!confirm('Importare il backup con '+d.trees.length+' alberi e '+nextImages.length+' foto? I dati attualmente su QUESTO dispositivo saranno sostituiti. Esporta prima un backup se vuoi conservarli.'))return;
-  const next={schema:4,app:'Comune di Lesmo Patrimonio Arboreo 3.0 Mobile',saved:new Date().toISOString(),nextId:Math.max(Number(d.nextId)||1,1,...d.trees.map(t=>(Number(String(t.id).split('-').pop())||0)+1)),trees:d.trees,history:newHistory,photos:newPhotos};
+  const next={...municipalDataFrom(d),schema:4,app:'Comune di Lesmo Patrimonio Arboreo 3.0 Mobile',saved:new Date().toISOString(),nextId:Math.max(Number(d.nextId)||1,1,...d.trees.map(t=>(Number(String(t.id).split('-').pop())||0)+1)),trees:d.trees,history:newHistory,photos:newPhotos};
   // Atomic transaction: if quota is exceeded, existing data and images stay unchanged.
   await new Promise((resolve,reject)=>{const tx=mDB.transaction(['data','images'],'readwrite');tx.objectStore('images').clear();for(const obj of nextImages)tx.objectStore('images').put(obj.blob,obj.key);tx.objectStore('data').put(JSON.stringify(next),'archive');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('Memoria insufficiente: nessun dato sostituito'));tx.onerror=()=>reject(tx.error||Error('Importazione fallita'))});
-  trees=next.trees;historyEvents=next.history;photos=next.photos;seq=next.nextId;lastSaved=next.saved;refresh();updateArchiveUI('ready');switchSection('anagrafica');tell('Importati '+trees.length+' alberi e '+nextImages.length+' foto. Archivio sul telefono aggiornato.');
+  loadMunicipalData(next);trees=next.trees;historyEvents=next.history;photos=next.photos;seq=next.nextId;lastSaved=next.saved;refresh();updateArchiveUI('ready');switchSection('anagrafica');tell('Importati '+trees.length+' alberi e '+nextImages.length+' foto. Archivio sul telefono aggiornato.');
  }catch(ex){tell('Importazione annullata: '+ex.message);console.error('Importazione backup mobile',ex)}
 }
 function mLocationError(e){if(!navigator.geolocation)return 'GPS non disponibile in questo browser';if(!window.isSecureContext)return 'Per usare il GPS apri l’app da un indirizzo HTTPS in Chrome; non dall’anteprima del file.';if(e?.code===1)return 'Posizione negata. Consenti la localizzazione a Chrome nelle impostazioni dell’iPhone.';if(e?.code===2)return 'Posizione non disponibile. Riprova all’aperto.';if(e?.code===3)return 'Tempo scaduto: riprova vicino all’albero.';return e?.message||'Errore GPS';}
@@ -3229,7 +3233,9 @@ if(mMobile){
 </section></div>
 
 <style>.adminRecord{padding:10px 0;border-bottom:1px solid #e4eae5;font-size:12px}.adminRecord small{display:block;color:#687d70;margin:5px 0}.adminRecord button{font-size:11px;padding:6px 10px}.adminTrashList,.adminAuditList{max-height:250px;overflow:auto}.adminTile textarea{min-height:65px}</style><script src="viewport-layout.js?v=1"></script>
-<script src="drive-storage.js?v=5"></script>
+<script src="drive-storage.js?v=6"></script>
 <script src="admin-ui.js?v=2"></script>
 <script src="user-guide.js?v=1"></script>
+<script src="vendor/qrcode.js?v=1"></script>
+<script src="municipal-ui.js?v=1"></script>
 </body></html>

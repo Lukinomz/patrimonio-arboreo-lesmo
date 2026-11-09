@@ -50,6 +50,7 @@
     }
     return true;
   }
+  window.validMunicipalPolygon=validPolygon;window.municipalPolygonCenter=centerOf;window.municipalPolygonSize=areaSize;window.focusMunicipalArea=geometry=>{focusArea(geometry);draw();};
   function makeStemEditor(prefix){
     return `<section class="stemEditor" id="${prefix}Box" hidden><label>Quanti fusti?<input type="number" id="${prefix}Count" min="2" max="100" step="1" inputmode="numeric" placeholder="Es. 3"/></label><div id="${prefix}Inputs" class="stemInputs"></div><output id="${prefix}Result" class="stemResult" aria-live="polite">Inserisci il numero di fusti.</output><small>Diametro equivalente = √(d₁² + d₂² + … + dₙ²)</small></section>`;
   }
@@ -160,8 +161,13 @@
     v2CloseAnag({keep:true});switchSection('mappa');byId('map').closest('.stage').classList.add('groupAreaDrawing');tools.hidden=false;
     if(editorGeometry)focusArea(editorGeometry);updateTools();draw();
   }
+  window.beginMunicipalArea=function({geometry,onConfirm,onCancel}){
+    stopMapAdd();hideTreeCard();drawing={points:[],external:{onConfirm,onCancel}};switchSection('mappa');byId('map').closest('.stage').classList.add('groupAreaDrawing');tools.hidden=false;
+    if(geometry)focusArea(geometry);updateTools();draw();
+  };
   async function endArea(geometry){
     const draft=drawing;if(!draft)return;drawing=null;tools.hidden=true;byId('map').closest('.stage').classList.remove('groupAreaDrawing');
+    if(draft.external){drawGroupAreas();if(geometry)draft.external.onConfirm(geometry);else draft.external.onCancel();return;}
     v2AnaMapDraft={id:draft.id,fields:draft.fields,group:{...draft.group,...(geometry?{geometry}:{})}};
     const center=geometry?centerOf(geometry):{lat:draft.fields.v2AnaLat,lon:draft.fields.v2AnaLon};
     await v2OpenAnag(trees.find(tree=>tree.id===draft.id)||null,center.lat,center.lon);drawGroupAreas();
@@ -179,7 +185,7 @@
     areaSvg.setAttribute('viewBox',`0 0 ${w} ${h}`);areaSvg.setAttribute('width',w);areaSvg.setAttribute('height',h);
     const parts=[];let shown=0;
     for(const tree of trees){
-      if(!hasGroupArea(tree)||!mapVisibleStates.has(MAP_STATUS_ORDER.includes(tree.status)?tree.status:'unknown'))continue;
+      if(!window.Municipal?.layers.trees||!hasGroupArea(tree)||!mapVisibleStates.has(MAP_STATUS_ORDER.includes(tree.status)?tree.status:'unknown'))continue;
       const points=tree.geometry.coordinates[0].map(([lon,lat])=>mapFromLL(lat,lon));
       if(Math.max(...points.map(p=>p.x))<0||Math.min(...points.map(p=>p.x))>w||Math.max(...points.map(p=>p.y))<0||Math.min(...points.map(p=>p.y))>h)continue;
       const color=MAP_MARKER_COLORS[tree.status]||'#587746',representative=isValid(tree)?tree:centerOf(tree.geometry),center=mapFromLL(representative.lat,representative.lon);

@@ -108,6 +108,7 @@
   }
 
   function validate(data) {
+    municipalValidate(data);
     if (!data || !Array.isArray(data.trees) || data.trees.some(t => !isTree(t)) || data.history != null && !Array.isArray(data.history) || data.photos != null && !Array.isArray(data.photos)) {
       throw Error('L’archivio Drive non è valido. I dati correnti non sono stati sostituiti.');
     }
@@ -141,11 +142,11 @@
     byId('syncStatus').textContent = summary;
     byId('syncStatus').className = blocked ? 'error' : 'ready';
     for (const id of ['archiveDetail', 'archiveWorkDetail', 'workFolderReminder', 'mArchiveDetail']) {
-      if (byId(id)) byId(id).textContent = blocked || 'Google Drive · ' + active.name + ' · ' + trees.length + ' alberi · ' + photos.filter(p => !p.removed).length + ' foto · ' + (lastSaved ? 'salvato: ' + new Date(lastSaved).toLocaleString('it-IT') : 'archivio vuoto');
+      if (byId(id)) byId(id).textContent = blocked || 'Google Drive · ' + active.name + ' · ' + trees.length + ' alberi' + (Municipal.assets.length ? ' · ' + Municipal.assets.length + ' arredi / aree / giochi' : '') + ' · ' + photos.filter(p => !p.removed).length + ' foto · ' + (lastSaved ? 'salvato: ' + new Date(lastSaved).toLocaleString('it-IT') : 'archivio vuoto');
     }
     if (byId('folderName')) byId('folderName').textContent = '☁ ' + active.name;
     if (byId('folderHint')) byId('folderHint').textContent = 'Archivio condiviso Google Drive';
-    if (byId('mBannerContent')) byId('mBannerContent').textContent = blocked || 'Google Drive collegato. I salvataggi aggiornano l’archivio condiviso. Usa Aggiorna DB per vedere le modifiche altrui.';
+    if (byId('mBannerContent')) byId('mBannerContent').textContent = blocked || (statusMode === 'saving' ? 'Salvataggio in corso…' : 'Archivio condiviso · ' + (trees.length + Municipal.assets.length) + ' schede');
   }
 
   function stopWrites(error) {
@@ -249,7 +250,7 @@
   mImportBackup = function(file) { return active ? importDrive(file) : local.mobileImport(file); };
 
   function applyData(data) {
-    trees = data.trees; historyEvents = data.history || []; photos = data.photos || [];
+    loadMunicipalData(data);trees = data.trees; historyEvents = data.history || []; photos = data.photos || [];
     seq = trees.reduce((n, t) => Math.max(n, (Number(t.id.split('-').pop()) || 0) + 1), Math.max(Number(data.nextId) || 1, 1));
     lastSaved = data.saved || '';
   }
@@ -273,7 +274,7 @@
 
   async function refreshDatabase({silent = false} = {}) {
     if (!active || refreshing || busy) return false;
-    if (quickBusy || v2AnagBusy || backupInProgress || (v2SelectedId && byId('v2CensusSave').disabled && v21SurveyStaged.length)) {
+    if (document.querySelector('#municipalDialog[open] form') || window.municipalBusy || quickBusy || v2AnagBusy || backupInProgress || (v2SelectedId && byId('v2CensusSave').disabled && v21SurveyStaged.length)) {
       tell('Attendi la fine del salvataggio o del backup prima di aggiornare il DB.');
       return false;
     }

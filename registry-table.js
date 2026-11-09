@@ -3,10 +3,10 @@
   'use strict';
   const state = {sort: 'code', direction: 'asc', species: new Set(), address: new Set()};
   const collator = new Intl.Collator('it', {numeric: true, sensitivity: 'base'});
-  const labels = {code: 'Identificativo', species: 'Specie', address: 'Via / località', status: 'Stato', gps: 'GPS', photos: 'Foto', surveys: 'Rilievi', surveyDate: 'Ultimo rilievo', modified: 'Ultima modifica'};
-  const defaults = Object.keys(labels);defaults.splice(3,0,'siteType','park');
+  const labels = {code: 'Identificativo', species: 'Specie', address: 'Via/Località/Parco', status: 'Stato', gps: 'GPS', photos: 'Foto', surveys: 'Rilievi', surveyDate: 'Ultimo rilievo', modified: 'Ultima modifica'};
+  const defaults = Object.keys(labels);defaults.splice(3,0,'siteType');
   let columnFilters;
-  Object.assign(labels, {park:'Parco',scientificName:'Nome scientifico',siteType:'Contesto',placement:'Collocazione',lat:'Latitudine',lon:'Longitudine',height:'Altezza (m)',diameter:'Diametro (cm)',crownDiameter:'Chioma (m)',priority:'Priorità',nextCheck:'Prossima verifica',origin:'Origine',plantDate:'Data piantumazione',created:'Data inserimento',notes:'Note conservate',initialObservationNotes:'Osservazioni primo rilievo',surveyNotes:'Ultime osservazioni',recordType:'Tipo di censimento',treeCount:'Esemplari',countEstimated:'Conteggio stimato',stemCount:'Numero fusti',stemDiameters:'Diametri fusti (cm)',geometry:'Perimetro GeoJSON'});
+  Object.assign(labels, {scientificName:'Nome scientifico',siteType:'Contesto',placement:'Collocazione',lat:'Latitudine',lon:'Longitudine',height:'Altezza (m)',diameter:'Diametro (cm)',crownDiameter:'Chioma (m)',priority:'Priorità',nextCheck:'Prossima verifica',origin:'Origine',plantDate:'Data piantumazione',created:'Data inserimento',notes:'Note conservate',initialObservationNotes:'Osservazioni primo rilievo',surveyNotes:'Ultime osservazioni',recordType:'Tipo di censimento',treeCount:'Esemplari',countEstimated:'Conteggio stimato',stemCount:'Numero fusti',stemDiameters:'Diametri fusti (cm)',geometry:'Perimetro GeoJSON'});
   const visibleColumns = new Set(defaults);
   const numberFields = new Set(['lat','lon','height','diameter','crownDiameter','photos','surveys','treeCount','stemCount']);
   const dateFields = new Set(['surveyDate','modified','nextCheck','plantDate','created']);
@@ -19,7 +19,7 @@
     const counts = new Map();
     for (const photo of photos) if (!photo.removed) counts.set(photo.treeId, (counts.get(photo.treeId) || 0) + 1);
     const number = value => value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
-    return trees.map(tree => ({tree,park:municipalParkName(tree),recordType:recordTypeLabel(tree),treeCount:recordQuantity(tree)??'',countEstimated:tree.countEstimated?'Sì':'No',stemCount:tree.stemCount??'',stemDiameters:(tree.stemDiameters||[]).join(' · '),geometry:hasGroupArea(tree)?JSON.stringify(tree.geometry):'',initialObservationNotes:firstObservationNotes(tree),surveyNotes:tree.surveyNotes||'',scientificName: tree.scientificName || '',
+    return trees.map(tree => ({tree,recordType:recordTypeLabel(tree),treeCount:recordQuantity(tree)??'',countEstimated:tree.countEstimated?'Sì':'No',stemCount:tree.stemCount??'',stemDiameters:(tree.stemDiameters||[]).join(' · '),geometry:hasGroupArea(tree)?JSON.stringify(tree.geometry):'',initialObservationNotes:firstObservationNotes(tree),surveyNotes:tree.surveyNotes||'',scientificName: tree.scientificName || '',
       siteType: treeContextLabel(tree),
       placement: tree.placement || '', lat:isValid(tree)?Number(tree.lat):'',lon:isValid(tree)?Number(tree.lon):'',
       height:number(tree.height),diameter:number(tree.diameter),crownDiameter:number(tree.crownDiameter),
@@ -124,9 +124,9 @@
   window.renderRegistryTable = function () {
     if(!columnFilters){
       const columns=Object.fromEntries(Object.entries(labels).map(([key,label])=>[key,{label,type:numberFields.has(key)?'number':dateFields.has(key)?'date':'text'}]));
-      columns.siteType={label:'Contesto',context:true,value:row=>municipalContextId(row.tree),format:municipalAreaName};columns.park={label:'Parco',park:true,value:row=>municipalParkId(row.tree),format:municipalAreaName,choices:()=>municipalParks().map(p=>p.id)};columns.gps.format=value=>value==='1'?'Con GPS':'Senza GPS';
+      columns.siteType={label:'Contesto',context:true,value:row=>municipalContextId(row.tree),format:municipalAreaName};columns.gps.format=value=>value==='1'?'Con GPS':'Senza GPS';
       columnFilters=RegistryFilters.create({id:'trees',columns,getRows:records,baseMatch:row=>matches(row,criteria()),onChange:()=>{overviewPage=0;renderDashboard();}});
-      const quick=document.createElement('button');quick.id='registryContextFilter';quick.className='columnQuickFilter';const box=document.createElement('label');box.className='registryField';box.innerHTML='<span class="registryFieldLabel">Contesto</span>';box.appendChild(quick);byId('overviewStatus').closest('label').insertAdjacentElement('afterend',box);columnFilters.quickButton(quick,'siteType','Tutti i contesti');const parkButton=document.createElement('button'),parkBox=document.createElement('label');parkButton.id='registryParkFilter';parkBox.className='registryField';parkBox.innerHTML='<span class="registryFieldLabel">Parco</span>';parkBox.appendChild(parkButton);box.after(parkBox);columnFilters.quickButton(parkButton,'park','Tutti i parchi');
+      const quick=document.createElement('button');quick.id='registryContextFilter';quick.className='columnQuickFilter';const box=document.createElement('label');box.className='registryField';box.innerHTML='<span class="registryFieldLabel">Contesto</span>';box.appendChild(quick);byId('overviewStatus').closest('label').insertAdjacentElement('afterend',box);columnFilters.quickButton(quick,'siteType','Tutti i contesti');
       const status=document.createElement('button');status.id='registryStatusFilter';byId('overviewStatus').hidden=true;byId('overviewStatus').insertAdjacentElement('afterend',status);columnFilters.quickButton(status,'status','Tutte le condizioni');
       const chips=document.createElement('div');chips.id='registryColumnFilterChips';chips.className='columnFilterChips';byId('registryActiveFilters').insertAdjacentElement('afterend',chips);
     }

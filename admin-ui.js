@@ -5,7 +5,6 @@
   const trashKey = 'LesmoAdminV2Trash', auditKey = 'LesmoAdminV2Audit';
   let logged = false, busy = false, limit = 100, previousInert = false;
   const selection = new Set();
-  window.isMunicipalAdmin=()=>logged&&overlay.classList.contains('open');
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
   const normalized = value => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('it-IT');
   const clone = value => structuredClone(value);
@@ -193,7 +192,6 @@
   $('adminDeleteTree').onclick = deleteSelected;
   $('adminTrashList').onclick = event => { const button = event.target.closest('[data-restore]'); if (button) restoreEntry(button.dataset.restore, button.dataset.restoreTree); };
   $('adminBackup').onclick = () => { if (logged && !busy) expJSON(); };
-  const contextTile=document.createElement('article');contextTile.className='adminTile';contextTile.innerHTML='<strong>Contesti e parchi</strong><p>Crea e modifica parchi, vie e altri luoghi a cui associare alberi, arredi e giochi.</p><button class="btn main" type="button" id="adminContexts">Gestisci contesti e parchi</button>'; $('adminContent').prepend(contextTile);$('adminContexts').onclick=()=>{if(logged&&!busy)window.openMunicipalContexts?.();};
   window.addEventListener('storage', event => { if (logged && !busy && [trashKey, auditKey].includes(event.key)) render(); });
   const previousRefresh = refresh;
   refresh = function(...args) { const result = previousRefresh(...args); if (logged && !busy) render(); return result; };

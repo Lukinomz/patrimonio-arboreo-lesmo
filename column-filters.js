@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const instances=new Map(), empty=()=>({values:new Set(),text:'',min:'',max:''});
-  let context=empty(),park=empty(),popup=null,trigger=null;
+  let context=empty(),popup=null,trigger=null;
   const norm=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('it').trim();
   const raw=value=>value==null?'':String(value);
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -10,15 +10,12 @@
   function close(){popup?.remove();popup=null;trigger?.setAttribute('aria-expanded','false');if(trigger?.isConnected)trigger.focus({preventScroll:true});trigger=null;}
   window.RegistryFilters={
     contextMatches(value){return !context.values.size||context.values.has(raw(value));},
-    parkMatches(value){return !park.values.size||park.values.has(raw(value));},
-    get parkValues(){return new Set(park.values);},
-    setParks(values){park={...empty(),values:new Set(values)};window.renderDashboard?.();},
     get contextValues(){return new Set(context.values);},
     setContexts(values){context={...empty(),values:new Set(values)};window.renderDashboard?.();},
     create({id,columns,getRows,onChange,baseMatch=()=>true}){
       const filters=new Map(),quick=new Map();
       const config=key=>({label:key,type:'text',...columns[key]});
-      const state=key=>config(key).context?context:config(key).park?park:filters.get(key)||empty();
+      const state=key=>config(key).context?context:filters.get(key)||empty();
       const value=(row,key)=>raw(config(key).value?config(key).value(row):row[key]);
       const label=(key,val)=>val===''?'(Non indicato)':config(key).format?config(key).format(val):val;
       function matches(row,skip){
@@ -33,7 +30,7 @@
           return true;
         });
       }
-      function commit(key,next){if(config(key).context)context=next;else if(config(key).park)park=next;else filters.set(key,next);close();onChange();}
+      function commit(key,next){if(config(key).context)context=next;else filters.set(key,next);close();onChange();}
       function open(key,button){
         close();trigger=button;const c=config(key),s=state(key),draft={...s,values:new Set(s.values)};
         popup=document.createElement('div');popup.id='columnFilterPopup';popup.className='columnFilterPopup';popup.setAttribute('role','dialog');popup.setAttribute('aria-label','Filtra '+c.label);
@@ -75,7 +72,7 @@
       function chips(container){
         container.replaceChildren();for(const key of Object.keys(columns)){const s=state(key);if(!active(s))continue;const button=document.createElement('button');button.type='button';const selected=s.values.size===1?label(key,[...s.values][0]):s.values.size?`${s.values.size} selezionati`:`${s.min||'…'} – ${s.max||'…'}`;button.textContent=`${config(key).label}: ${selected} ×`;button.onclick=()=>commit(key,empty());container.appendChild(button);}container.hidden=!container.childElementCount;
       }
-      const api={matches,headers,quickButton,open,update,chips,hasFilters:()=>Object.keys(columns).some(key=>active(state(key))),reset({preserveContext=false}={}){filters.clear();if(!preserveContext){context=empty();park=empty();}update();}};
+      const api={matches,headers,quickButton,open,update,chips,hasFilters:()=>Object.keys(columns).some(key=>active(state(key))),reset({preserveContext=false}={}){filters.clear();if(!preserveContext){context=empty();}update();}};
       instances.set(id,api);return api;
     },
     get:id=>instances.get(id)

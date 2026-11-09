@@ -171,7 +171,7 @@ def main():
             assert page.locator('#v2DetailOverlay').is_visible(); page.locator('#v2DetailClose').click()
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-columns="all"]').click()
-            assert page.locator('#overviewTable th').count() == 33
+            assert page.locator('#overviewTable th').count() == 32
             sort('diameter')
             visible_keys=page.locator('[data-registry-sort]').evaluate_all('es=>es.map(e=>e.dataset.registrySort)')
             diameter_column=visible_keys.index('diameter')+1
@@ -179,7 +179,7 @@ def main():
             sort('diameter');values=list(map(int,cells(diameter_column)));assert values==sorted(values,reverse=True)
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-columns="default"]').click()
-            assert page.locator('#overviewTable th').count() == 12
+            assert page.locator('#overviewTable th').count() == 11
             page.locator('.registryColumns summary').click()
             page.locator('[data-registry-edit]').first.click()
             assert page.locator('#v2AnagOverlay').is_visible()

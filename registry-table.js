@@ -147,7 +147,7 @@
       if (key === 'status') return statusChip(t);
       if (key === 'gps') return record.gps ? `<button class="tinyBtn" data-goto="${esc(t.id)}" aria-label="Apri ${esc(record.code)} sulla mappa">⌖ Mappa</button><button class="tinyBtn" data-street="${esc(t.id)}" title="Street View" aria-label="Street View per ${esc(record.code)}">SV ↗</button>` : '<span class="registryMissing">Da posizionare</span>';
       if (dateFields.has(key)) return dateLabel(record[key]);
-      if (key === 'diameter') return formatTreeDiameter(record[key]);
+      if (key === 'diameter') return formatTreeDiameter(record[key],t);
       if (numberFields.has(key)) return record[key] === '' ? '—' : record[key].toLocaleString('it-IT', {maximumFractionDigits: key === 'lat' || key === 'lon' ? 7 : 2});
       return esc(record[key] || (key === 'species' ? 'Non identificata' : '—'));
     };

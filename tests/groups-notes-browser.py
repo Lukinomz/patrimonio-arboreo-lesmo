@@ -55,6 +55,10 @@ def main():
                 page.wait_for_function("document.body.classList.contains('driveConnected')")
                 return page
             page=page_new()
+            assert page.evaluate("formatTreeDiameter(147.6,{recordType:'multistem'})")=='150'
+            assert page.evaluate("formatTreeDiameter(144.9,{recordType:'multistem'})")=='140'
+            assert page.evaluate("formatTreeDiameter(145,{recordType:'multistem'})")=='150'
+            assert page.evaluate("formatTreeDiameter(147.6,{recordType:'single'})")=='147,6'
             with page.expect_download() as download:page.evaluate('expCSV()')
             with open(download.value.path(),encoding='utf-8-sig',newline='') as stream:exported=list(csv.DictReader(stream,delimiter=';'))
             assert exported[0]['initialObservationNotes']==original
@@ -120,7 +124,7 @@ def main():
 
             # Fusti: inserimento dinamico, calcolo non arrotondato nel DB, misure individuali conservate.
             manual();page.locator('#v2AnaSpecies').fill('Carpino');page.locator('#groupRecordType').select_option('multistem')
-            page.locator('#groupStemCount').fill('2')
+            page.locator('#groupStemCount').fill('2');page.locator('#v2AnaLat').fill('45.648');page.locator('#v2AnaLon').fill('9.306')
             assert page.locator('#groupStemInputs input').count()==2
             page.locator('#groupStemInputs input').nth(0).fill('30');page.locator('#groupStemInputs input').nth(1).fill('0')
             before_invalid=len(data()['trees']);page.locator('#v2AnaSave').click()
@@ -135,8 +139,8 @@ def main():
             page.locator('#groupStemCount').fill('');page.locator('#groupStemCount').fill('3');assert page.locator('#groupStemInputs input').count()==3
             assert page.locator('#groupStemInputs input').nth(0).input_value()=='30'
             page.locator('#groupStemInputs input').nth(2).fill('12,5')
-            assert page.locator('#groupStemResult').inner_text()=='Diametro equivalente: 51,5 cm'
-            assert page.locator('#v21InitialDiameter').input_value()=='51,5'
+            assert page.locator('#groupStemResult').inner_text()=='Diametro equivalente: 50 cm'
+            assert page.locator('#v21InitialDiameter').input_value()=='50'
             page.screenshot(path=str(ARTIFACTS/'multistem-form.png'))
             page.locator('#v2AnaSave').click();saved()
             multi=next(t for t in data()['trees'] if t['id']==multi['id'])
@@ -146,12 +150,13 @@ def main():
 
             # Rilievo successivo: aggiorna i fusti e conserva il primo rilievo.
             page.locator(f'#overviewRows [data-tree="{multi["id"]}"]').click()
-            assert page.locator('.v2DetailCell').filter(has=page.locator('small',has_text='Diametro equivalente')).locator('b').inner_text()=='51,5 cm'
+            assert page.locator('.v2DetailCell').filter(has=page.locator('small',has_text='Diametro equivalente')).locator('b').inner_text()=='50 cm'
+            assert 'Ø equivalente 50 cm' in page.locator('#v2DetailContent .groupRecordBadge').inner_text()
             page.locator('#v2DetailCensus').click()
             assert page.locator('#surveyStemBox').is_visible()
             for input,value in zip(page.locator('#surveyStemInputs input').all(),['35','45','15']):input.fill(value)
-            assert page.locator('#surveyStemResult').inner_text()=='Diametro equivalente: 58,9 cm'
-            assert page.locator('#v2CensusDiameter').input_value()=='58,9'
+            assert page.locator('#surveyStemResult').inner_text()=='Diametro equivalente: 60 cm'
+            assert page.locator('#v2CensusDiameter').input_value()=='60'
             page.locator('#v2CensusNote').fill('Controllo successivo dei tre fusti.')
             page.locator('#v2CensusSave').click()
             page.wait_for_function("document.getElementById('v2CensusFeedback').textContent.includes('salvata')")
@@ -161,9 +166,18 @@ def main():
             assert multi['notes']=='Due fusti dalla stessa ceppaia.' and multi['surveyNotes']=='Controllo successivo dei tre fusti.'
             assert any(e['treeId']==multi['id'] and e.get('snapshot',{}).get('stemDiameters')==[35,45,15] for e in data()['history'])
             page.locator('.mainNav [data-view="anagrafica"]').click()
+            page.locator('[data-registry-columns="all"]').evaluate('e=>e.click()')
+            diameter_column=page.locator('#overviewTable th').evaluate_all("els=>els.findIndex(e=>e.dataset.columnKey==='diameter')")
+            multi_row=page.locator('#overviewRows tr').filter(has=page.locator(f'[data-tree="{multi["id"]}"]'))
+            assert multi_row.locator('td').nth(diameter_column).inner_text()=='60'
+            page.evaluate('(id)=>{switchSection("mappa");showTreeMapCard(trees.find(t=>t.id===id))}',multi['id'])
+            assert '60 cm' in page.locator('#treeMapCard').inner_text() and str(multi['diameter']) not in page.locator('#treeMapCard').inner_text()
+            page.locator('.mainNav [data-view="anagrafica"]').click()
             page.locator(f'[data-registry-edit="{multi["id"]}"]').click()
             assert page.locator('#v21InitialNotes').input_value()=='Due fusti dalla stessa ceppaia.'
+            assert page.locator('#v21InitialDiameter').input_value()=='60'
             page.locator('#v2AnagClose').click()
+            print('PASS: risultato policormico alla decina in scheda, registro, mappa e modulo; valori completi e singoli fusti conservati nel DB',flush=True)
             print('PASS: rilevazioni policormiche aggiornano il diametro equivalente senza sovrascrivere le osservazioni iniziali',flush=True)
 
             # Fascia senza numero: non equivale ad un solo albero nei totali.
@@ -187,6 +201,7 @@ def main():
             with open(download.value.path(),encoding='utf-8-sig',newline='') as stream:exported=list(csv.DictReader(stream,delimiter=';'))
             assert json.loads(next(row for row in exported if row['id']==group['id'])['geometry'])==group['geometry']
             assert json.loads(next(row for row in exported if row['id']==multi['id'])['stemDiameters'])==[35,45,15]
+            assert math.isclose(float(next(row for row in exported if row['id']==multi['id'])['diameter']),math.sqrt(35**2+45**2+15**2),rel_tol=1e-12)
             page.context.close()
 
             # Nuova sessione iPhone: caricamento reale da Drive simulato e geometrie/fusti intatti.
@@ -195,6 +210,7 @@ def main():
             page.locator('#overviewRows [data-tree]').click();page.locator('#v2DetailAnag').click()
             assert page.locator('#v21InitialNotes').is_visible() and page.locator('#v21InitialNotes').input_value()=='Due fusti dalla stessa ceppaia.'
             assert page.locator('#groupStemInputs input').count()==3
+            assert page.locator('#groupStemResult').inner_text()=='Diametro equivalente: 60 cm'
             assert [input.input_value() for input in page.locator('#groupStemInputs input').all()]==['35','45','15']
             page.locator('#v2AnagClose').click()
             page.locator('[data-mobile-view="mappa"]').click();page.locator('#newGroupAreaMap').click();page.locator('#groupAreaTools').wait_for(state='visible')

@@ -1213,13 +1213,13 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <link rel="stylesheet" href="admin-ui.css?v=2"/>
 <link rel="stylesheet" href="registry-table.css?v=2"/>
 <script src="column-filters.js?v=2"></script>
-<script src="registry-table.js?v=5"></script>
+<script src="registry-table.js?v=6"></script>
 <link rel="stylesheet" href="map-selection.css?v=1"/>
 <script src="map-selection.js?v=1"></script>
 <link rel="stylesheet" href="statistics-dashboard.css?v=1"/>
 <script src="statistics-dashboard.js?v=3"></script>
 <link rel="stylesheet" href="group-census.css?v=1"/>
-<script src="group-census.js?v=3"></script>
+<script src="group-census.js?v=4"></script>
 <script src="municipal-data.js?v=3"></script>
 <script src="context-options.js?v=1"></script>
 <link rel="stylesheet" href="municipal.css?v=3"/>
@@ -1627,7 +1627,7 @@ function locateMapOverlay(el,x,y,width,height,gap=17){
 }
 function mapMarkerTooltip(t,p){
  const e=$('treeMapTooltip');if(!e||popupTreeId)return;
- e.innerHTML=`<strong>${esc(publicCode(t))} · ${esc(t.species||'Non identificata')}</strong><span>Stato: ${esc(statusName[t.status]||'Non valutato')}</span><span>${esc(t.address||'Località non indicata')}</span><span>Altezza: ${esc(t.height??'—')} m · Diametro: ${esc(formatTreeDiameter(t.diameter))} cm</span><small>${photoCount(t.id)} foto · ultimo rilievo: ${esc(lastSurveyDate(t)||'non disponibile')} · clicca per i dettagli</small>`;
+ e.innerHTML=`<strong>${esc(publicCode(t))} · ${esc(t.species||'Non identificata')}</strong><span>Stato: ${esc(statusName[t.status]||'Non valutato')}</span><span>${esc(t.address||'Località non indicata')}</span><span>Altezza: ${esc(t.height??'—')} m · Diametro: ${esc(formatTreeDiameter(t.diameter,t))} cm</span><small>${photoCount(t.id)} foto · ultimo rilievo: ${esc(lastSurveyDate(t)||'non disponibile')} · clicca per i dettagli</small>`;
  e.classList.remove('hidden');locateMapOverlay(e,p.x,p.y,264,120);
 }
 function mapPopupDetail(t){
@@ -1641,7 +1641,7 @@ function mapPopupDetail(t){
  e.innerHTML=`<div class="treeMapCardHead"><div class="mapCardHeading"><strong>${esc(publicCode(t))}</strong><small>${esc(t.species||'Specie non identificata')}${t.scientificName?' · '+esc(t.scientificName):''}</small></div><button type="button" class="treeMapCardClose" id="closeTreeMapCard" aria-label="Chiudi dettagli">×</button></div>
  <span class="treeMapStatus"><i style="background:${MAP_MARKER_COLORS[status]||MAP_MARKER_COLORS.unknown}"></i>${esc(statusName[status]||'Non valutato')}</span>
  ${t.recordType&&t.recordType!=='single'?`<div class="groupRecordBadge">${esc(recordTypeLabel(t))}${['group','woodland'].includes(t.recordType)?` · ${recordQuantity(t)===null?'quantità non indicata':`${t.countEstimated?'circa ':''}${recordQuantity(t)} esemplari`}`:` · ${t.stemCount||'?'} fusti`}</div>`:''}
- <div class="mapCardSummary">${cell('Via/Località/Parco',t.address||'Non indicata')}${cell('Data primo censimento (T0)',firstCensusDate)}${cell('Altezza',t.height===null||t.height===undefined?'—':t.height+' m')}${cell(t.recordType==='multistem'?'Diametro equivalente':'Diametro tronco',t.diameter===null||t.diameter===undefined?'—':formatTreeDiameter(t.diameter)+' cm')}${cell('Diametro chioma',formatTreeCrown(t))}${cell('Contesto',treeContextLabel(t))}${cell('Fotografie',photoCount(t.id))}${cell('Prossima verifica',t.nextCheck||'Non programmata')}</div>
+ <div class="mapCardSummary">${cell('Via/Località/Parco',t.address||'Non indicata')}${cell('Data primo censimento (T0)',firstCensusDate)}${cell('Altezza',t.height===null||t.height===undefined?'—':t.height+' m')}${cell(t.recordType==='multistem'?'Diametro equivalente':'Diametro tronco',t.diameter===null||t.diameter===undefined?'—':formatTreeDiameter(t.diameter,t)+' cm')}${cell('Diametro chioma',formatTreeCrown(t))}${cell('Contesto',treeContextLabel(t))}${cell('Fotografie',photoCount(t.id))}${cell('Prossima verifica',t.nextCheck||'Non programmata')}</div>
  <details><summary>Caratteristiche e posizione</summary><div class="mapDetailBody"><p><b>Nome scientifico:</b> ${escText(t.scientificName)}</p><p><b>Contesto:</b> ${escText(treeContextLabel(t))}</p><p><b>Diametro chioma:</b> ${escText(formatTreeCrown(t))}</p><p><b>GPS:</b> ${Number(t.lat).toFixed(6)}, ${Number(t.lon).toFixed(6)}</p><p><b>Note:</b> ${escText(t.notes)}</p></div></details>
  <details><summary>Monitoraggio e condizioni</summary><div class="mapDetailBody"><p><b>Stato:</b> ${escText(statusName[t.status])}</p><p><b>Priorità:</b> ${escText({normal:'Ordinaria',medium:'Media',high:'Alta',urgent:'Urgente'}[t.priority]||'Non definita')}</p><p><b>Ultima data scheda:</b> ${escText(t.date)}</p><p><b>Prossima verifica:</b> ${escText(t.nextCheck)}</p></div></details>
  <details><summary>Attività e storico dal T0 (${historyEvents.filter(x=>x.treeId===t.id).length})</summary><div class="mapDetailBody">${events.length?events.map(ev=>`<div class="mapEvent"><b>${esc(ev.date||'Data non indicata')}</b> · ${esc(typeLabel[ev.type]||ev.type)}<div>${esc(ev.description||'')}</div></div>`).join(''):'Nessun evento successivo al primo censimento.'}</div></details>
@@ -2043,7 +2043,7 @@ function renderTreeHistory(id){
  const all=historyEvents.filter(e=>e.treeId===id).sort(historyOrder),surveys=all.filter(e=>SURVEY_TYPES.has(e.type)),full=surveys.filter(e=>e.snapshot);
  $('historyList').innerHTML=all.length?all.slice(0,350).map(ev=>{
  const snapshot=ev.snapshot||null;
- const values=snapshot?`<div class="snapshot"><span>Specie: <b>${esc(snapshot.species||'—')}</b></span><span>Stato: <b>${esc(statusName[snapshot.status]||'—')}</b></span><span>Altezza: <b>${esc(snapshot.height??'—')} m</b></span><span>Diametro: <b>${esc(formatTreeDiameter(snapshot.diameter))} cm</b></span></div>`:'';
+ const values=snapshot?`<div class="snapshot"><span>Specie: <b>${esc(snapshot.species||'—')}</b></span><span>Stato: <b>${esc(statusName[snapshot.status]||'—')}</b></span><span>Altezza: <b>${esc(snapshot.height??'—')} m</b></span><span>Diametro: <b>${esc(formatTreeDiameter(snapshot.diameter,{...treeLookup.get(id),...snapshot}))} cm</b></span></div>`:'';
  return `<div class="eventCard"><strong><span class="typePill">${esc(typeLabel[ev.type]||ev.type)}</span> ${esc(ev.date||'Senza data')}</strong><small>Fonte: ${esc(ev.source||'Archivio locale')}${ev.operator?' · Rilevatore: '+esc(ev.operator):''} · Inserito: ${esc((ev.created||'').slice(0,10)||'—')}</small>${ev.description?`<p>${esc(ev.description)}</p>`:''}${values}${linkedPhotosForDate(id,ev.date)?`<small>📷 ${linkedPhotosForDate(id,ev.date)} foto dello stesso giorno</small>`:''}</div>`}).join(''):'<p class="empty">Nessuna rilevazione archiviata.</p>';
  const first=surveys.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)))[0];const last=surveys[0];
  const diam=full.filter(e=>e.snapshot?.diameter!==null&&e.snapshot?.diameter!==undefined).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -2643,7 +2643,7 @@ async function v2SaveAnag(e){
  let identityPersisted=false;
  try{
   if(changes.length){
-   const event={id:uniqueID(),treeId:id,type:prior?'correzione_anagrafica':'anagrafica',date:localDay(),created:now,description:prior?changes.map(k=>k==='geometry'?'Perimetro aggiornato':`${fieldName[k]||k}: ${String(prior[k]??'—')} → ${String(t[k]??'—')}`).join('; '):'Creazione della scheda anagrafica',source:'Anagrafica',before:prior?makeTreeSnapshot(prior):null,snapshot:makeTreeSnapshot(t)};
+   const event={id:uniqueID(),treeId:id,type:prior?'correzione_anagrafica':'anagrafica',date:localDay(),created:now,description:prior?changes.map(k=>k==='geometry'?'Perimetro aggiornato':k==='diameter'&&isEquivalentDiameter(t)?`Diametro equivalente ricalcolato: ${formatTreeDiameter(t.diameter,t)} cm`:`${fieldName[k]||k}: ${String(prior[k]??'—')} → ${String(t[k]??'—')}`).join('; '):'Creazione della scheda anagrafica',source:'Anagrafica',before:prior?makeTreeSnapshot(prior):null,snapshot:makeTreeSnapshot(t)};
    if(prior)trees[trees.indexOf(prior)]=t;else trees.push(t);
    historyEvents.push(event);
    if(!prior){
@@ -2671,7 +2671,7 @@ async function v2SaveAnag(e){
 }
 function v2Detail(t){if(!t)return;
  v2CloseAnag();v2DetailId=t.id;v2D('v2DetailTitle').textContent=publicCode(t)+' · '+(t.species||'Non identificata');
- const metrics=[['Stato',statusName[t.status]||'Non valutato'],['Codice',publicCode(t)],['Specie',t.species||'—'],['Nome scientifico',t.scientificName||'—'],['Via/Località/Parco',t.address||'—'],['Posizione',t.placement||'—'],['Contesto',treeContextLabel(t)],['GPS',isValid(t)?Number(t.lat).toFixed(6)+', '+Number(t.lon).toFixed(6):'Da posizionare'],['Ultimo rilievo',t.date||'Non disponibile'],['Altezza',t.height==null?'—':t.height+' m'],[t.recordType==='multistem'?'Diametro equivalente':'Diametro tronco',t.diameter==null?'—':formatTreeDiameter(t.diameter)+' cm'],['Diametro chioma',formatTreeCrown(t)],['Fotografie',photoCount(t.id)],['Prossima verifica',t.nextCheck||'Non programmata']];
+ const metrics=[['Stato',statusName[t.status]||'Non valutato'],['Codice',publicCode(t)],['Specie',t.species||'—'],['Nome scientifico',t.scientificName||'—'],['Via/Località/Parco',t.address||'—'],['Posizione',t.placement||'—'],['Contesto',treeContextLabel(t)],['GPS',isValid(t)?Number(t.lat).toFixed(6)+', '+Number(t.lon).toFixed(6):'Da posizionare'],['Ultimo rilievo',t.date||'Non disponibile'],['Altezza',t.height==null?'—':t.height+' m'],[t.recordType==='multistem'?'Diametro equivalente':'Diametro tronco',t.diameter==null?'—':formatTreeDiameter(t.diameter,t)+' cm'],['Diametro chioma',formatTreeCrown(t)],['Fotografie',photoCount(t.id)],['Prossima verifica',t.nextCheck||'Non programmata']];
  const safe=esc;
  v2D('v2DetailContent').innerHTML='<div class="v2DetailGrid">'+metrics.map(([k,v])=>`<div class="v2DetailCell"><small>${safe(k)}</small><b>${safe(v)}</b></div>`).join('')+'</div><p class="v2Muted">Dati identificativi modificabili solo da Anagrafica; osservazioni e misure solo da Censimento, eventi da Monitoraggio.</p>';
  showGroupAndNotesDetail(t);window.showMunicipalTreeDetail?.(t);
@@ -2692,7 +2692,7 @@ function v2SelectCensus(id){v2SelectedId=id;const t=trees.find(x=>x.id===id);if(
  for(const [key,val] of Object.entries(fields))v2D(key).value=val;
  for(const id of ['v2CensusAnag','v2CensusPhotos','v2CensusSave'])v2D(id).disabled=false;v2D('v2CensusFeedback').textContent='';v2DrawSurveyList();v2DrawCensusSearch();}
 function v2DrawCensusSearch(){const q=v2D('v2CensusQuery').value.trim().toLocaleLowerCase('it-IT');let arr=q?trees.filter(t=>[publicCode(t),t.species,t.address].join(' ').toLocaleLowerCase('it-IT').includes(q)):trees.slice(-6).reverse();arr=arr.slice(0,8);v2D('v2CensusMatches').innerHTML=arr.map(t=>`<button type="button" data-cid="${esc(t.id)}">${esc(publicCode(t))} · <b>${esc(t.species||'—')}</b> <small>${esc(t.address||'')}</small></button>`).join('')||'<div class="v2Muted">Nessun albero. Crealo prima in Anagrafica.</div>'}
-function v2DrawSurveyList(){const t=trees.find(x=>x.id===v2SelectedId);const ev=historyEvents.filter(e=>e.treeId===v2SelectedId&&['censimento','rilievo'].includes(e.type)).sort(historyOrder);v2D('v2CensusHistory').innerHTML=ev.length?ev.slice(0,40).map(e=>`<div class="v2EventLine"><strong>${esc(e.date||'—')} · ${esc(e.type==='censimento'?'Prima rilevazione':'Rilevazione')}</strong><p>${esc(e.description||'')} · Stato: ${esc(statusName[e.snapshot?.status]||'—')} · Altezza ${esc(e.snapshot?.height??'—')} m · Diametro ${esc(formatTreeDiameter(e.snapshot?.diameter))} cm</p></div>`).join(''):'Nessuna rilevazione ancora registrata.';}
+function v2DrawSurveyList(){const t=trees.find(x=>x.id===v2SelectedId);const ev=historyEvents.filter(e=>e.treeId===v2SelectedId&&['censimento','rilievo'].includes(e.type)).sort(historyOrder);v2D('v2CensusHistory').innerHTML=ev.length?ev.slice(0,40).map(e=>`<div class="v2EventLine"><strong>${esc(e.date||'—')} · ${esc(e.type==='censimento'?'Prima rilevazione':'Rilevazione')}</strong><p>${esc(e.description||'')} · Stato: ${esc(statusName[e.snapshot?.status]||'—')} · Altezza ${esc(e.snapshot?.height??'—')} m · Diametro ${esc(formatTreeDiameter(e.snapshot?.diameter,{...t,...e.snapshot}))} cm</p></div>`).join(''):'Nessuna rilevazione ancora registrata.';}
 async function v2SaveCensus(e){e.preventDefault();const t=trees.find(x=>x.id===v2SelectedId);if(!t)return v2Warn('Seleziona prima un albero dell’Anagrafica.');if(!folderHandle)return v2Warn('Collega prima l’archivio PC.');
  if(OUT_OF_STOCK_STATUSES.has(t.status))return v2Warn('Albero non più presente: non puoi registrare una nuova rilevazione sanitaria. Consulta Monitoraggio.');
  const date=dateFromCsv(v2D('v2CensusDate').value);if(!date)return v2Warn('Data di rilevazione non valida.');
@@ -2825,7 +2825,7 @@ async function v21SurveyLoadPreview(t){const tok=++v21SurveyShownToken;v21Survey
  const chosen=items[items.length-1];if(!folderHandle){root.innerHTML='<div class="v21ImagePlaceholder">▧<span>Collega l’archivio per visualizzare la fotografia</span></div>';return}
  try{const fh=await filePathHandle(chosen.relativePath);const file=await fh.getFile();if(tok!==v21SurveyShownToken)return;const u=URL.createObjectURL(file);v21SurveyShownURL=u;const img=document.createElement('img');img.alt='Fotografia associata a '+publicCode(t);img.src=u;const foot=document.createElement('span');foot.className='v21PhotoCaption';foot.textContent=items.length+' foto · '+(chosen.date||'data non disponibile');root.append(img,foot)}catch(err){root.innerHTML='<div class="v21ImagePlaceholder">▧<span>Foto non disponibile: verifica la cartella Foto</span></div>'}
 }
-function v21SurveySummary(t){const date=lastSurveyDate(t)||'Mai rilevato';const d=t.diameter===null||t.diameter===undefined?'—':formatTreeDiameter(t.diameter)+' cm';const h=t.height===null||t.height===undefined?'—':t.height+' m';const c=formatTreeCrown(t);const n=photos.filter(p=>p.treeId===t.id&&!p.removed).length;
+function v21SurveySummary(t){const date=lastSurveyDate(t)||'Mai rilevato';const d=t.diameter===null||t.diameter===undefined?'—':formatTreeDiameter(t.diameter,t)+' cm';const h=t.height===null||t.height===undefined?'—':t.height+' m';const c=formatTreeCrown(t);const n=photos.filter(p=>p.treeId===t.id&&!p.removed).length;
  $('v21SurveyLatest').innerHTML='<b>Ultima rilevazione:</b> '+esc(date)+'<br><b>Ultime misure:</b> altezza '+esc(h)+' · tronco '+esc(d)+' · chioma '+esc(c)+'<br><b>Contesto:</b> '+esc(treeContextLabel(t))+'<br><b>Fotografie:</b> '+n+' · <b>GPS:</b> '+(isValid(t)?'Presente':'Da completare in Anagrafica');
 }
 v2SelectCensus=function(id){v2SelectedId=id;const t=trees.find(x=>x.id===id);if(!t)return;v21SurveyClearQueue();$('v2CensusQuery').value=publicCode(t);$('v2CensusIdentity').innerHTML='<b>'+esc(publicCode(t))+' · '+esc(t.species||'Specie da verificare')+'</b><div class="v21IdentityMeta"><span>'+esc(t.address||'Via non indicata')+'</span><span>'+esc(statusName[t.status]||'Non valutato')+'</span></div>';
@@ -3241,5 +3241,5 @@ if(mMobile){
 <script src="user-guide.js?v=1"></script>
 <script src="vendor/qrcode.js?v=1"></script>
 
-<script src="municipal-ui.js?v=3"></script>
+<script src="municipal-ui.js?v=4"></script>
 </body></html>

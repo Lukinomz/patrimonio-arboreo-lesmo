@@ -64,3 +64,12 @@ rilievi, foto e metadati precedenti. Apertura, filtri e backup non devono produr
 scritture. Le modifiche esplicite alle note non devono cancellare i dati vecchi.
 Le altre suite verificano registro, gruppi/policormici, moduli, sincronizzazione,
 interventi, backup e amministrazione. Nessuna prova usa il DB condiviso reale.
+
+
+## Diametro equivalente dei policormici
+
+Il risultato mostrato nei moduli, nelle schede, nel registro e nei riepiloghi
+è arrotondato alla decina di centimetri più vicina, senza cifre decimali
+(es. 147,6 → 150 cm). I diametri dei fusti, il calcolo √Σd² e i valori salvati
+negli snapshot e nei backup conservano la precisione originale. I diametri
+degli alberi singoli mantengono la visualizzazione precedente.

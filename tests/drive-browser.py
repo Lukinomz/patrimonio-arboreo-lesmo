@@ -85,6 +85,32 @@ def main():
                     assert not page.locator("#app").evaluate("e => e.inert")
                     page.evaluate("switchSection('archivio')")
 
+            def check_registry_refresh(page, widths):
+                actions = []
+                def record_request(request):
+                    if request.url == ENDPOINT:
+                        actions.append(json.loads(request.post_data)["action"])
+                page.on("request", record_request)
+                page.evaluate("switchSection('anagrafica')")
+                for width in widths:
+                    page.set_viewport_size({"width": width, "height": 844 if width < 740 else 900})
+                    for category in ["trees", "all", "furniture", "playgrounds"]:
+                        page.locator(f'[data-mun-category="{category}"]').click()
+                        button = page.locator("#driveRefreshRegistry")
+                        assert button.is_visible() and button.is_enabled(), (width, category)
+                        assert button.inner_text() == "↻ Aggiorna database"
+                        bounds = button.bounding_box()
+                        assert bounds["height"] >= 44 and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width, (width, category, bounds)
+                        button.click()
+                        page.wait_for_function("!document.getElementById('driveRefreshRegistry').disabled")
+                        assert page.locator("#driveRefreshStatus").is_visible(), (width, category)
+                        assert page.locator("#driveRefreshStatus").inner_text().startswith("DB aggiornato")
+                        assert page.locator("#driveAccess").is_hidden()
+                        assert page.locator("#driveKey").input_value() == ""
+                assert actions == ["load"] * (4 * len(widths)), actions
+                page.remove_listener("request", record_request)
+                page.locator('[data-mun-category="trees"]').click()
+
             desktop = new_page()
             desktop.locator("#driveSetup").evaluate("e => e.open = true")
             desktop.locator("#driveGenerate").click()
@@ -123,6 +149,9 @@ def main():
             mobile.evaluate("renderDashboard(); updateArchiveUI()")
             assert "Google Drive" in mobile.locator("#workFolderReminder").inner_text()
             assert mobile.locator("#mArchiveTools").is_hidden()
+            check_registry_refresh(desktop, [1280])
+            check_registry_refresh(mobile, [390, 320])
+            print("PASS: Aggiorna database visibile e funzionante in Alberi, Tutti, Arredo urbano e Aree giochi su PC e smartphone 320/390; solo letture, senza nuova password")
             print("PASS: scheda e foto scritte da desktop e lette da telefono")
             print("PASS: il normale link richiede solo la password da browser desktop e mobile nuovi")
 

@@ -129,7 +129,7 @@
     for (const id of ['driveReload', 'driveRefreshRegistry']) {
       if (byId(id)) {
         byId(id).disabled = !active || !!busy || refreshing;
-        byId(id).textContent = refreshing ? 'Aggiornamento…' : '↻ Aggiorna DB';
+        byId(id).textContent = refreshing ? 'Aggiornamento…' : '↻ Aggiorna database';
       }
     }
     for (const id of ['driveURL', 'driveKey', 'driveCreate']) byId(id).disabled = connecting || !!active;
@@ -376,7 +376,7 @@
       <form id="driveForm">
         <input type="hidden" id="driveURL">
         <label class="field driveLoginOnly">Password di accesso<input type="password" id="driveKey" name="password" required autocomplete="current-password"></label>
-        <div class="archiveBtns"><button class="btn main driveLoginOnly" id="driveConnect" type="submit">Accedi</button><button class="btn driveSessionOnly" id="driveShare" type="button" disabled>Copia link dell’app</button><button class="btn driveSessionOnly" id="driveReload" type="button" disabled>↻ Aggiorna DB</button><button class="btn driveSessionOnly" id="driveDisconnect" type="button" disabled>Esci</button><button class="btn driveSessionOnly" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn driveSessionOnly" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
+        <div class="archiveBtns"><button class="btn main driveLoginOnly" id="driveConnect" type="submit">Accedi</button><button class="btn driveSessionOnly" id="driveShare" type="button" disabled>Copia link dell’app</button><button class="btn driveSessionOnly" id="driveReload" type="button" disabled>↻ Aggiorna database</button><button class="btn driveSessionOnly" id="driveDisconnect" type="button" disabled>Esci</button><button class="btn driveSessionOnly" id="driveRecovery" type="button" disabled>Scarica backup / copia da recuperare</button><button class="btn driveSessionOnly" id="driveImport" type="button" disabled>Ripristina backup su Drive</button></div>
         <input id="driveImportFile" type="file" accept=".json,application/json" hidden>
         <details id="driveSetup" class="driveLoginOnly"><summary>Prima configurazione e archivio locale</summary>
           <p class="driveHelp">Questa sezione serve al responsabile. Per accedere basta la password.</p>
@@ -388,7 +388,7 @@
         </details>
       </form>
       <p id="driveStatus" role="status" aria-live="polite"></p><p id="driveFeedback" role="alert"></p>
-      <p class="driveSessionOnly">Ogni salvataggio aggiorna l’archivio condiviso su Google Drive. La password viene verificata dal servizio Google e resta in memoria per questa pagina. Per vedere le modifiche degli altri usa Aggiorna DB, senza ripetere l’accesso.</p>
+      <p class="driveSessionOnly">Ogni salvataggio aggiorna l’archivio condiviso su Google Drive. La password viene verificata dal servizio Google e resta in memoria per questa pagina. Per vedere le modifiche degli altri usa Aggiorna database, senza ripetere l’accesso.</p>
     `;
     const gate = document.createElement('div'); gate.id = 'driveAccess';
     gate.setAttribute('role', 'dialog'); gate.setAttribute('aria-modal', 'true'); gate.setAttribute('aria-labelledby', 'driveAccessTitle');
@@ -402,14 +402,15 @@
     byId('workFolderReminder').insertAdjacentElement('afterend', open);
     const refreshButton = document.createElement('button');
     refreshButton.id = 'driveRefreshRegistry'; refreshButton.type = 'button'; refreshButton.className = 'btn';
-    refreshButton.textContent = '↻ Aggiorna DB'; refreshButton.disabled = true;
+    refreshButton.textContent = '↻ Aggiorna database'; refreshButton.disabled = true;
     refreshButton.onclick = refreshDatabase;
-    const registryActions = byId('viewRiepilogo').querySelector('.v2SectionActions');
-    registryActions.querySelector('.v2ActionRow').prepend(refreshButton);
+    const registrySync = document.createElement('div');
+    registrySync.id = 'driveRegistrySync';
     const refreshStatus = document.createElement('div');
     refreshStatus.id = 'driveRefreshStatus'; refreshStatus.className = 'driveRefreshStatus';
     refreshStatus.setAttribute('role', 'status'); refreshStatus.setAttribute('aria-live', 'polite');
-    registryActions.insertAdjacentElement('afterend', refreshStatus);
+    registrySync.append(refreshButton, refreshStatus);
+    byId('viewRiepilogo').prepend(registrySync);
     byId('driveForm').onsubmit = connect;
     byId('driveGenerate').onclick = generateKey;
     byId('driveShare').onclick = shareConnection;

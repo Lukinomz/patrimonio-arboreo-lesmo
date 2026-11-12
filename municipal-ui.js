@@ -377,7 +377,6 @@
     if(mMobile){
       const legacy=document.querySelector('.v21Registry'),filters=legacy.querySelector('.registryFilters'),details=document.createElement('details');details.id='mobileRegistryFilters';details.className='munMobileFilters';details.innerHTML='<summary>Filtri</summary>';filters.before(details);details.appendChild(filters);
       const actions=$('mHomeActions');if(actions)legacy.querySelector('.sectionHead').after(actions);
-      const refresh=$('driveRefreshRegistry');if(refresh)legacy.querySelector('.registryOrderRow').prepend(refresh);
     }
     const stats=document.createElement('section');stats.id='munStatistics';$('viewStatistiche').appendChild(stats);
     const selectCensus=v2SelectCensus;v2SelectCensus=function(...args){window.municipalSurveyReference=null;return selectCensus(...args);};

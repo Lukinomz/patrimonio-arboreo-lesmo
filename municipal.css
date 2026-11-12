@@ -5,7 +5,7 @@
 .munCategories button.active{background:#fff;color:#20593d;box-shadow:0 2px 7px #24412713}
 #munRegistry,#munInspectionStart,#munStatistics{display:none}
 .municipalOther #munRegistry,.municipalOther #munInspectionStart,.municipalOther #munStatistics{display:block}
-.municipalOther #viewRiepilogo>:not(#munRegistry),.municipalOther #viewCensimento>:not(#munInspectionStart):not(#munTasks),.municipalOther #viewStatistiche>:not(#munStatistics),.municipalOther #viewMonitoraggio{display:none!important}
+.municipalOther #viewRiepilogo>:not(#munRegistry):not(#driveRegistrySync),.municipalOther #viewCensimento>:not(#munInspectionStart):not(#munTasks),.municipalOther #viewStatistiche>:not(#munStatistics),.municipalOther #viewMonitoraggio{display:none!important}
 .munDialog{box-sizing:border-box;width:min(820px,calc(100% - 24px));max-height:90dvh;overflow:auto;padding:0;border:1px solid #d6dfd0;border-radius:20px;background:#fffefb;color:#233e2c;box-shadow:0 20px 100px #0d281f44;overscroll-behavior:contain;font-family:inherit}
 .munDialog::backdrop{background:#15302788;backdrop-filter:blur(3px)}
 .munDialog *{box-sizing:border-box}.munDialog h2{font-size:23px;line-height:1.2;letter-spacing:-.5px;margin:4px 0}.munDialog h3{font-size:16px;margin:22px 0 10px}.munDialog p{line-height:1.6}.munDialogHead{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:22px 24px;border-bottom:1px solid #e3e8de;background:#fffefb;position:sticky;top:0;z-index:2}
@@ -62,7 +62,6 @@
  body.mobileMode #mobileRegistryFilters{margin:10px 0}
  body.mobileMode #mobileRegistryFilters>.registryFilters{padding:12px 0}
  body.mobileMode .v21Registry .registryOrderRow{gap:7px}
- body.mobileMode #driveRefreshRegistry{min-height:36px;padding:8px 10px;font-size:11px}
  .munTable td:first-child,.munTable th:first-child{min-width:44px!important;width:44px;max-width:44px}
  .munTable td:nth-child(2),.munTable th:nth-child(2){left:44px!important}
 }

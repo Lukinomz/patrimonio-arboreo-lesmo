@@ -260,6 +260,75 @@
     commonDisclosure.querySelector('div').append(commonFilters,sort,$('munRegistryBreakdown'));tools.prepend(commonDisclosure);
     $('driveRegistrySync').classList.add('registrySrOnly');
   }
+  // Keep the existing tables and their controls; only change the space they occupy.
+  let registryLayoutFrame=0;
+  function fitRegistryViewport(){
+    cancelAnimationFrame(registryLayoutFrame);
+    registryLayoutFrame=requestAnimationFrame(()=>{
+      if(!document.body.classList.contains('anagraficaOpen'))return;
+      const registry=document.querySelector(Municipal.categoryFilter==='trees'?'.v21Registry':'#munRegistry');
+      const viewport=registry?.querySelector('#v21RegistryViewport,.munTableViewport'),workspace=document.querySelector('.workspace');
+      if(!viewport?.getClientRects().length)return;
+      const visual=window.visualViewport,expanded=document.body.classList.contains('registryExpanded');
+      let bottom=visual?visual.offsetTop+visual.height:innerHeight;
+      const nav=$('mFieldNav');
+      if(!expanded&&nav?.getClientRects().length)bottom=Math.min(bottom,nav.getBoundingClientRect().top);
+      // Measure at the workspace's scroll origin so scrolling cannot grow the table.
+      const top=viewport.getBoundingClientRect().top+workspace.scrollTop;
+      const footer=registry.querySelector('.tableFoot,.munTableFoot');
+      const height=Math.max(120,Math.floor(bottom-top-footer.getBoundingClientRect().height-16));
+      viewport.style.setProperty('height',`${height}px`,'important');
+      viewport.style.setProperty('max-height','none','important');
+    });
+  }
+  function setupRegistryViewport(){
+    let previousScroll=0;
+    if(!$('mHomeActions')){
+      const create=document.createElement('button');create.id='registryExpandedNew';create.type='button';create.className='btn main registryExpandedOnly';create.textContent='＋ Nuovo albero';
+      create.onclick=()=>$('manualHeader').click();document.querySelector('.v21Registry .registryToolbarActions').prepend(create);
+    }
+    const columns=$('munRegistry').querySelector('.munColumnMenu');
+    columns.addEventListener('keydown',event=>{if(event.key==='Escape'){columns.open=false;columns.querySelector('summary').focus();event.preventDefault();event.stopPropagation();}});
+    const buttonContent=expanded=>`<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="${expanded?'M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5':'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5'}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${expanded?'Riduci':'Espandi'}</span>`;
+    const toggle=expanded=>{
+      const workspace=document.querySelector('.workspace'),wasExpanded=document.body.classList.contains('registryExpanded');
+      if(expanded===wasExpanded)return;
+      if(expanded)previousScroll=workspace.scrollTop;
+      document.body.classList.toggle('registryExpanded',expanded);
+      workspace.scrollTop=expanded?0:previousScroll;
+      for(const id of ['registryExpand','munRegistryExpand']){
+        const button=$(id);button.innerHTML=buttonContent(expanded);
+        button.setAttribute('aria-pressed',String(expanded));
+        button.setAttribute('aria-label',expanded?'Riduci tabella':'Espandi tabella');
+      }
+      fitRegistryViewport();
+    };
+    window.collapseRegistryView=()=>toggle(false);
+    for(const [selector,id] of [['.registryOrderRow','registryExpand'],['.munTableTools','munRegistryExpand']]){
+      const tools=document.querySelector(selector),button=document.createElement('button');
+      button.id=id;button.type='button';button.className='btn registryExpand';button.innerHTML=buttonContent(false);
+      button.setAttribute('aria-label','Espandi tabella');button.setAttribute('aria-pressed','false');
+      button.onclick=()=>toggle(!document.body.classList.contains('registryExpanded'));
+      tools.insertBefore(button,tools.querySelector('.registryColumns,.munColumnMenu'));
+    }
+    for(const [id,label,symbol] of [['munPrev','Pagina precedente','←'],['munNext','Pagina successiva','→']]){
+      $(id).setAttribute('aria-label',label);$(id).textContent=symbol;
+    }
+    document.addEventListener('keydown',event=>{
+      if(event.key!=='Escape'||!document.body.classList.contains('registryExpanded'))return;
+      // Escape belongs to an open editor or menu before it belongs to the layout.
+      const overlays=document.querySelectorAll('dialog[open],[role="dialog"],.modalCover,.columnFilterPopup');
+      if([...overlays].some(el=>el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden'))return;
+      if(document.querySelector('.registryColumns[open],.munColumnMenu[open],[data-registry-facet][open]'))return;
+      toggle(false);$(Municipal.categoryFilter==='trees'?'registryExpand':'munRegistryExpand').focus();
+      event.preventDefault();
+    },true);
+    const observer=new ResizeObserver(fitRegistryViewport);
+    document.querySelectorAll('.workspace,.header,.mainNav,#mFieldNav,#municipalCategories,.v21Registry>.sectionHead,#munRegistry>.sectionHead,.registryOrderRow,.munTableTools,.tableFoot,.munTableFoot,#registryActiveFilters,#munFilterChips,#munBulkActions,#driveRegistrySync,#syncStatus').forEach(el=>observer.observe(el));
+    document.addEventListener('toggle',fitRegistryViewport,true);
+    window.addEventListener('resize',fitRegistryViewport);
+    window.visualViewport?.addEventListener('resize',fitRegistryViewport);
+  }
   function setupInspections(){
     $('viewCensimento').insertAdjacentHTML('afterbegin',`<section class="workCard" id="munInspectionStart"><div class="sectionHead"><div><h2>Nuova rilevazione</h2><p>Seleziona una scheda per consultare i rilievi precedenti e registrare la visita.</p></div><button class="btn main" id="munInspectionPick">Seleziona elemento</button></div></section>`);
     $('viewCensimento').insertAdjacentHTML('beforeend',`<section class="workCard" id="munTasks"><div class="sectionHead"><div><h2>Interventi e manutenzione</h2><p id="munTasksCount"></p></div><button class="btn main" id="munTaskNew">＋ Intervento</button></div><div class="munTaskTabs" role="group" aria-label="Filtra interventi">${[['active','Aperti'],['late','Scaduti'],['done','Completati'],['all','Tutti']].map(([key,name])=>`<button type="button" data-task-filter="${key}" aria-pressed="${key==='active'}">${name}</button>`).join('')}</div><div id="munTasksList"></div></section>`);
@@ -409,7 +478,7 @@
     for(const id of ['manualHeader','mAddNewTree'])if($(id))$(id).textContent=other&&['anagrafica','censimento'].includes(section)?'＋ Nuovo elemento':'＋ Nuovo albero';
     const refresh=$('driveRefreshRegistry'),actions=document.querySelector(other?'#munRegistry .registryToolbarActions':'.v21Registry .registryToolbarActions');
     if(refresh&&actions&&refresh.parentElement!==actions)actions.insertBefore(refresh,$(other?'munExport':'downloadTable'));
-    renderCommon();renderTasks();if(other)renderStats();drawMunicipalMap();
+    renderCommon();renderTasks();if(other)renderStats();drawMunicipalMap();fitRegistryViewport();
     const target=new URL(location.href).searchParams.get('record');if(target&&!document.body.classList.contains('driveLoginRequired')&&folderHandle&&municipalRecord(target)&&dialog&&!dialog.open){const url=new URL(location.href);url.searchParams.delete('record');history.replaceState(null,'',url);setTimeout(()=>{const category=Municipal.category(municipalRecord(target));setMunicipalSectionCategory('anagrafica',Object.hasOwn(categories,category)?category:'all');switchSection('anagrafica');openRecord(target);},0);}
   };
   document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
@@ -419,7 +488,7 @@
     document.querySelectorAll('[data-mun-category]').forEach(b=>b.onclick=()=>setCategory(b.dataset.munCategory));
     Object.assign(typeLabel,{asset_rilievo:'Rilevazione',asset_anagrafica:'Aggiornamento scheda',assegnazione_area:'Assegnazione contesto',intervento_pianificato:'Intervento pianificato',intervento_aggiornato:'Intervento aggiornato',intervento_completato:'Intervento completato'});
     setupRegistry();setupInspections();setupMap();setupTreeExtensions();
-    setupCompactRegistry();
+    setupCompactRegistry();setupRegistryViewport();
     const stats=document.createElement('section');stats.id='munStatistics';$('viewStatistiche').appendChild(stats);
     const selectCensus=v2SelectCensus;v2SelectCensus=function(...args){window.municipalSurveyReference=null;setMunicipalSectionCategory('censimento','trees');const result=selectCensus(...args);renderMunicipalUI();return result;};
     const drawHistory=v2DrawSurveyList;v2DrawSurveyList=function(...args){const result=drawHistory(...args);if(v2SelectedId&&$('v2CensusHistory')){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Consulta e riutilizza i rilievi precedenti';button.onclick=()=>showTreeReferences(municipalRecord(v2SelectedId));$('v2CensusHistory').prepend(button);}return result;};

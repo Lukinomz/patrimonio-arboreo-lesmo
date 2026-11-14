@@ -1222,7 +1222,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <script src="group-census.js?v=4"></script>
 <script src="municipal-data.js?v=3"></script>
 <script src="context-options.js?v=1"></script>
-<link rel="stylesheet" href="municipal.css?v=6"/>
+<link rel="stylesheet" href="municipal.css?v=7"/>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
@@ -2722,6 +2722,7 @@ async function v2SaveGeneralEvent(){const code=v2D('v2EventCode').value.trim(),t
 let v2ArchivePanel='archive',v2MonitorTimeline=false;
 switchSection=function(which){
  window.closeMapLayers?.();
+ if(!['anagrafica','riepilogo'].includes(which))window.collapseRegistryView?.();
  if(which==='archivio'||which==='foto'){window.openAdminArchive?.(which==='foto'?'photos':v2ArchivePanel);return;}
  window.closeAdmin?.();
  if(which==='monitoraggio')which='censimento';if(which==='riepilogo')which='anagrafica';if(which==='storico'){which='censimento';v2MonitorTimeline=true;}if(which==='foto'){which='archivio';v2ArchivePanel='photos';}
@@ -3259,5 +3260,5 @@ if(mMobile){
 <script src="user-guide.js?v=1"></script>
 <script src="vendor/qrcode.js?v=1"></script>
 
-<script src="municipal-ui.js?v=7"></script>
+<script src="municipal-ui.js?v=8"></script>
 </body></html>

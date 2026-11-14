@@ -166,3 +166,35 @@ body.mobileMode.anagraficaOpen .registryToolbarActions>#mHomeActions{display:con
 body.mobileMode.anagraficaOpen #viewRiepilogo .registryToolbarActions .btn{min-height:44px;padding:8px 7px;font-size:12px;white-space:normal}
 body.mobileMode.anagraficaOpen .registryFilterDisclosure>summary,body.mobileMode.anagraficaOpen :is(.registryColumns,.munColumnMenu)>summary{min-height:44px;display:inline-flex;align-items:center}
 @media(min-width:741px){body.mobileMode.anagraficaOpen .registryToolbarActions{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Give the register the remaining viewport, with a voluntary expanded workspace. */
+.anagraficaOpen .workspace{padding-bottom:8px}
+.anagraficaOpen :is(.registryOrderRow,.munTableTools)>.registryExpand{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-left:auto;min-height:34px;padding:7px 11px;font-size:12px;white-space:nowrap}
+.anagraficaOpen :is(.registryColumns,.munColumnMenu){margin-left:0}
+.anagraficaOpen :is(#v21RegistryViewport,.munTableViewport){height:calc(100dvh - 390px);max-height:none}
+.anagraficaOpen :is(.tableFoot,.munTableFoot){padding:8px 0 0;margin:0;min-height:44px}
+.anagraficaOpen #munRegistry .munTableFoot .btn{width:36px;min-height:36px;padding:5px}
+.anagraficaOpen #munRegistry .munTable input[type=checkbox]{vertical-align:middle;margin:0}
+body:not(.mobileMode).anagraficaOpen #overviewTable td,
+body:not(.mobileMode).anagraficaOpen #munRegistry .munTable td{padding:5px 10px;height:36px;line-height:1.4}
+body:not(.mobileMode).anagraficaOpen :is(#overviewTable,#munRegistry .munTable) :is(.chip,.munBadge){padding:3px 8px}
+body:not(.mobileMode).anagraficaOpen :is(#overviewTable,#munRegistry .munTable) .tinyBtn{min-height:26px;padding:4px 6px}
+body:not(.mobileMode).anagraficaOpen #munRegistry .codeLink{min-height:26px;padding:2px 0;line-height:1.4}
+body:not(.mobileMode).anagraficaOpen .munTable :is(th,td):first-child{padding:5px 10px}
+body:not(.mobileMode).anagraficaOpen #munRegistry .munTable th:not(:first-child){padding:0 35px 0 0}
+body.mobileMode.anagraficaOpen :is(.registryOrderRow,.munTableTools)>.registryExpand{min-height:44px}
+body.mobileMode.anagraficaOpen #overviewTable td,
+body.mobileMode.anagraficaOpen #munRegistry .munTable td{padding:4px 8px!important;height:44px!important}
+body.mobileMode.anagraficaOpen #munRegistry .munTable th:not(:first-child){padding:0 35px 0 0!important}
+body.mobileMode.anagraficaOpen :is(.tableFoot,.munTableFoot){flex-wrap:nowrap;align-items:center;gap:6px;font-size:11px}
+body.mobileMode.anagraficaOpen :is(.tableFoot,.munTableFoot)>span{min-width:0;flex:1}
+body.mobileMode.anagraficaOpen :is(.tableFoot,.munTableFoot)>div{width:auto!important;flex-shrink:0;gap:4px}
+body.mobileMode.anagraficaOpen :is(.tableFoot,.munTableFoot) .btn{width:44px!important;min-height:44px!important;padding:5px}
+body.mobileMode.anagraficaOpen #pageInfo{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+body.mobileMode.anagraficaOpen .v21PerPageLabel{font-size:11px;gap:4px}
+body.mobileMode.anagraficaOpen #v21PageSize{min-height:44px}
+body.registryExpanded :is(.header,.mainNav,#municipalCategories,#mFieldNav){display:none!important}
+body.registryExpanded.anagraficaOpen .workspace{padding:8px}
+body.registryExpanded.anagraficaOpen :is(.v21Registry,#munRegistry){border-radius:10px;box-shadow:none}
+.registryExpandedOnly{display:none!important}
+body.registryExpanded .registryExpandedOnly{display:inline-flex!important}

@@ -11,6 +11,7 @@ import urllib.request
 import urllib.parse
 
 from playwright.sync_api import sync_playwright
+from browser_support import mock_admin_login, open_archive
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 KEY = "test-only-key-not-for-production-0123456789"
@@ -51,6 +52,7 @@ def main():
                         route.abort()
 
                 context.route("**/*", bridge)
+                mock_admin_login(context)
                 page = context.new_page()
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 def handle_dialog(dialog):
@@ -83,7 +85,7 @@ def main():
                 if page.evaluate("document.body.classList.contains('driveConnected')"):
                     assert page.locator("#driveAccess").is_hidden()
                     assert not page.locator("#app").evaluate("e => e.inert")
-                    page.evaluate("switchSection('archivio')")
+                    open_archive(page)
 
             def check_registry_refresh(page, widths):
                 actions = []
@@ -131,7 +133,7 @@ def main():
             assert KEY not in desktop.evaluate("JSON.stringify(localStorage)")
             print("PASS: chiave errata rifiutata, creazione solo esplicita, chiave non persistita")
 
-            desktop.evaluate("v2OpenAnag(null)")
+            desktop.evaluate("switchSection('anagrafica')"); desktop.evaluate("v2OpenAnag(null)")
             assert desktop.locator("#v2AnaCode").input_value() == "LESMO-A0001"
             desktop.locator("#v2AnaCode").fill("DRIVE-TEST-1")
             desktop.locator("#v2AnaSpecies").fill("Tiglio")
@@ -155,7 +157,7 @@ def main():
             print("PASS: scheda e foto scritte da desktop e lette da telefono")
             print("PASS: il normale link richiede solo la password da browser desktop e mobile nuovi")
 
-            desktop.evaluate("switchSection('archivio')")
+            open_archive(desktop)
             desktop.locator("#driveShare").click()
             access_link = desktop.evaluate("window.testCopiedText")
             assert access_link == url + "/"
@@ -177,7 +179,7 @@ def main():
             invalid.close()
             print("PASS: condivisione del solo link normale; vecchi link riservati compatibili, servizi estranei rifiutati")
 
-            desktop.evaluate("v2OpenAnag(trees[0])")
+            desktop.evaluate("switchSection('anagrafica')"); desktop.evaluate("v2OpenAnag(trees[0])")
             desktop.locator("#v2AnaAddress").fill("Via aggiornata dal primo utente")
             desktop.locator("#v2AnaSave").click()
             desktop.wait_for_function("!v2AnagBusy")
@@ -189,22 +191,22 @@ def main():
             assert mobile.locator("#driveAccess").is_hidden()
             assert mobile.locator("#driveKey").input_value() == ""
             assert mobile.locator("#driveRefreshStatus").inner_text().startswith("DB aggiornato")
-            mobile.evaluate("v2OpenAnag(trees[0])")
+            mobile.evaluate("switchSection('anagrafica')"); mobile.evaluate("v2OpenAnag(trees[0])")
             mobile.locator("#v2AnaPlacement").fill("Davanti al civico 10")
             mobile.locator("#v2AnaSave").click()
             mobile.wait_for_function("!v2AnagBusy")
             assert "Un’altra persona" not in mobile.locator("#driveStatus").inner_text()
-            desktop.evaluate("switchSection('archivio')")
+            open_archive(desktop)
             desktop.locator("#driveReload").click()
             desktop.wait_for_function("trees[0].placement === 'Davanti al civico 10'")
             assert desktop.locator("#driveAccess").is_hidden()
             print("PASS: Aggiorna DB rilegge le modifiche altrui da Alberi e Archivio, senza password né ricaricare la pagina; salvataggi successivi riusciti")
 
-            desktop.evaluate("v2OpenAnag(trees[0])")
+            desktop.evaluate("switchSection('anagrafica')"); desktop.evaluate("v2OpenAnag(trees[0])")
             desktop.locator("#v2AnaSpecies").fill("Tiglio aggiornato")
             desktop.locator("#v2AnaSave").click()
             desktop.wait_for_function("!v2AnagBusy")
-            mobile.evaluate("v2OpenAnag(trees[0])")
+            mobile.evaluate("switchSection('anagrafica')"); mobile.evaluate("v2OpenAnag(trees[0])")
             mobile.locator("#v2AnaAddress").fill("Modifica concorrente da rifiutare")
             mobile.locator("#v2AnaSave").click()
             mobile.wait_for_function("document.getElementById('driveStatus').textContent.includes('Un’altra persona')")
@@ -214,7 +216,7 @@ def main():
             assert probe.evaluate("trees[0].address") == "Via aggiornata dal primo utente"
             assert mobile.locator("#driveImport").is_disabled()
             print("PASS: conflitto bloccato senza sovrascrivere il primo utente")
-            mobile.evaluate("v2CloseAnag(); switchSection('archivio')")
+            mobile.evaluate("v2CloseAnag()"); open_archive(mobile)
             with mobile.expect_download() as recovery:
                 mobile.locator("#driveRecovery").click()
             recovered = json.loads(pathlib.Path(recovery.value.path()).read_text())
@@ -351,7 +353,7 @@ def main():
             offline = new_page(mobile=True)
             offline.locator("#driveSetup").evaluate("e => e.open = true")
             offline.locator("#driveLocal").click()
-            offline.evaluate("v2OpenAnag(null)")
+            offline.evaluate("switchSection('anagrafica')"); offline.evaluate("v2OpenAnag(null)")
             offline.locator("#v2AnaCode").fill("LOCAL-TEST")
             offline.locator("#v2AnaSpecies").fill("Quercia locale")
             offline.locator("#v21InitialDate").fill("2026-10-29")

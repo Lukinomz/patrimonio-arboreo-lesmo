@@ -1,6 +1,7 @@
 """Percorsi comuni PC/iPhone su archivio Drive simulato, mai sul DB reale."""
 import base64,csv,functools,http.server,json,pathlib,re,subprocess,tempfile,threading,urllib.request
 from playwright.sync_api import sync_playwright
+from browser_support import mock_admin_login
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 KEY='test-only-key-not-for-production-0123456789'
 ENDPOINT=re.search(r"const DEFAULT_DRIVE_URL = '([^']+)'",(ROOT/'drive-storage.js').read_text()).group(1)
@@ -29,7 +30,7 @@ def main():
                         with urllib.request.urlopen(req) as response:route.fulfill(status=200,content_type='application/json',body=response.read())
                     elif route.request.url.startswith(base):route.continue_()
                     else:route.abort()
-                context.route('**/*',bridge);page=context.new_page();page.set_default_timeout(7000);page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+url);page.locator('#driveKey').fill(KEY);page.locator('#driveConnect').click();page.wait_for_function("document.body.classList.contains('driveConnected')");page.wait_for_selector('#municipalCategories');return page
+                context.route('**/*',bridge);mock_admin_login(context);page=context.new_page();page.set_default_timeout(7000);page.on('pageerror',lambda e:errors.append(str(e)));page.goto(base+url);page.locator('#driveKey').fill(KEY);page.locator('#driveConnect').click();page.wait_for_function("document.body.classList.contains('driveConnected')");page.wait_for_selector('#municipalCategories');page.evaluate("switchSection('anagrafica')");return page
             page=page_new();page.on('dialog',lambda d:d.accept())
             # Parent area drawn on the actual map, then a bench with original photo.
             page.evaluate("openAssetForm(municipalRecord('ASSET-parent'))");page.locator('#munName').fill('Parco Test');page.locator('#munPerimeter').click()
@@ -88,7 +89,7 @@ def main():
             mobile.screenshot(path='/tmp/lesmo-municipal-mobile.png',full_page=True);assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
             mobile.evaluate("switchSection('mappa')");mobile.locator('#munLayersButton').click();assert mobile.locator('#munLayers').is_visible();mobile.locator('[data-layer=trees]').uncheck();assert mobile.locator('#pins button').count()==0;mobile.locator('[data-layer=bench]').uncheck();assert mobile.locator('.munMapPin[title*="Panchina"]').count()==0;mobile.screenshot(path='/tmp/lesmo-municipal-layers.png',full_page=True)
             mobile.locator('#munLayersClose').click();mobile.evaluate("switchSection('anagrafica')");mobile.locator('#munNew').click();mobile.locator('[data-new-kind=bench]').click();assert mobile.locator('#munMaterial').is_visible();mobile.screenshot(path='/tmp/lesmo-municipal-form.png',full_page=True);mobile.evaluate('document.documentElement.style.setProperty("--dialog-viewport-height","350px")');assert mobile.locator('#municipalDialog').bounding_box()['height']<=333;mobile.locator('#municipalDialog').evaluate('e=>e.scrollTop=e.scrollHeight');assert mobile.locator('[data-mun-close]').is_visible();mobile.locator('[data-mun-close]').click()
-            assert all(mobile.locator(f'[data-mobile-view={name}]').is_visible() for name in ['anagrafica','censimento','mappa','statistiche','archivio','guida'])
+            assert all(mobile.locator(f'[data-mobile-view={name}]').is_visible() for name in ['statistiche','anagrafica','censimento','mappa','guida'])
             page.evaluate("switchSection('statistiche')");page.locator('[data-mun-category=all]').click();assert page.locator('.munDonut').is_visible();page.screenshot(path='/tmp/lesmo-municipal-stats.png',full_page=True)
             # Existing local mobile mode also restores the complete extended backup and reopens it.
             local_context=browser.new_context(**p.devices['iPhone 13']);local_context.route('**/*',lambda route:route.continue_() if route.request.url.startswith(base) else route.abort());local=local_context.new_page();local.on('dialog',lambda d:d.accept());local.on('pageerror',lambda e:errors.append(str(e)));local.goto(base);local.wait_for_function('mArchiveReady');local.locator('#driveSetup').evaluate('e=>e.open=true');local.locator('#driveLocal').click();local.evaluate('(backup)=>mImportBackup(new File([JSON.stringify(backup)],"backup.json",{type:"application/json"}))',backup);assert local.evaluate('Municipal.assets.length')==3;assert local.evaluate('Municipal.workOrders.length')==2;local.reload();local.wait_for_function('mArchiveReady');assert local.evaluate('Municipal.assets.length')==3;assert local.evaluate('historyEvents[0].id')=='old-survey';local_context.close()

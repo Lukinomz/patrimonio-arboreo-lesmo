@@ -4,6 +4,44 @@
   const $ = id => document.getElementById(id), overlay = $('adminOverlay');
   const trashKey = 'LesmoAdminV2Trash', auditKey = 'LesmoAdminV2Audit';
   let logged = false, busy = false, limit = 100, previousInert = false;
+  let requestedPanel = 'trees';
+  $('adminArchivePanel').appendChild($('viewArchivio'));
+  $('viewArchivio').classList.remove('hidden');
+  const dataTools=document.createElement('section');dataTools.id='archiveDataTools';dataTools.className='workCard';
+  dataTools.innerHTML='<h3>Esportazioni e importazioni</h3><div class="archiveBtns"></div>';
+  const oldImportCard=$('importCsvWork').closest('.workCard');
+  $('csvFromWork').textContent='Esporta CSV alberi';$('geoFromWork').textContent='Esporta GeoJSON patrimonio';
+  dataTools.querySelector('.archiveBtns').append($('csvFromWork'),$('geoFromWork'),$('importCsvWork'));
+  dataTools.append($('csvFile'),$('jsonFile'));
+  oldImportCard.hidden=true;
+  const historicalTools=document.createElement('details');historicalTools.id='archiveHistoricalTools';historicalTools.className='workCard';
+  historicalTools.innerHTML='<summary>Importa rilevazioni precedenti</summary>';
+  $('historicalImportCard').classList.remove('v2LegacyHidden','workCard');historicalTools.appendChild($('historicalImportCard'));
+  $('viewArchivio').append(dataTools,historicalTools);
+  function showPanel(panel) {
+    requestedPanel = panel === 'archive' ? 'archive' : 'trees';
+    $('adminTreesPanel').hidden = requestedPanel !== 'trees';
+    $('adminArchivePanel').hidden = requestedPanel !== 'archive';
+    overlay.classList.toggle('archiveOpen', requestedPanel === 'archive');
+    overlay.querySelectorAll('[data-admin-panel]').forEach(button => {
+      const active = button.dataset.adminPanel === requestedPanel;
+      button.classList.toggle('main', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    if (requestedPanel === 'archive') v2ShowArchivePanel();
+  }
+  function openAdmin(panel = 'trees') {
+    requestedPanel = panel;
+    if (!overlay.classList.contains('open')) {
+      previousInert = $('app').inert; $('app').inert = true;
+      overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
+    }
+    if (logged) showPanel(requestedPanel);
+    else $('adminPassword').focus();
+  }
+  window.openAdmin = openAdmin;
+  window.openAdminArchive = (panel = 'archive') => { v2ArchivePanel = panel; openAdmin('archive'); };
+  window.closeAdmin = () => { if (overlay.classList.contains('open')) hide(); };
   const selection = new Set();
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
   const normalized = value => String(value ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('it-IT');
@@ -61,12 +99,14 @@
   }
   function setBusy(value) {
     busy = value;
-    for (const control of $('adminContent').querySelectorAll('input,select,textarea,button')) control.disabled = value;
+    for (const control of $('adminTreesPanel').querySelectorAll('input,select,textarea,button')) control.disabled = value;
+    for (const control of overlay.querySelectorAll('[data-admin-panel]')) control.disabled = value;
     $('adminClose').disabled = value;
     updateSelection();
   }
   function lock() {
     logged = false; selection.clear();
+    overlay.classList.remove('archiveOpen');
     $('adminContent').classList.add('hidden'); $('adminLogin').classList.remove('hidden');
     $('adminPassword').value = ''; $('adminLoginError').classList.add('hidden');
     $('adminTreeSearch').value = ''; limit = 100; message();
@@ -159,10 +199,9 @@
     } finally { setBusy(false); }
   }
 
-  $('adminOpen').addEventListener('click', () => {
-    if (overlay.classList.contains('open')) return;
-    previousInert = $('app').inert; $('app').inert = true;
-    overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false'); $('adminPassword').focus();
+  $('adminOpen').addEventListener('click', () => openAdmin());
+  overlay.querySelectorAll('[data-admin-panel]').forEach(button => {
+    button.onclick = () => { if (logged && !busy) showPanel(button.dataset.adminPanel); };
   });
   $('adminClose').onclick = hide;
   overlay.addEventListener('click', event => { if (event.target === overlay) hide(); });
@@ -179,7 +218,8 @@
   $('adminLoginButton').onclick = () => {
     if ($('adminPassword').value !== 'Albereto71') { $('adminLoginError').classList.remove('hidden'); return; }
     logged = true; $('adminPassword').value = ''; $('adminLogin').classList.add('hidden'); $('adminContent').classList.remove('hidden');
-    render(); $('adminTreeSelect').focus();
+    render(); showPanel(requestedPanel);
+    (requestedPanel === 'archive' ? $('v2ArchiveTab') : $('adminTreeSelect')).focus();
   };
   $('adminPassword').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); $('adminLoginButton').click(); } });
   $('adminLogout').onclick = () => { if (!busy) { lock(); $('adminPassword').focus(); } };

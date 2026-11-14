@@ -15,11 +15,12 @@ import threading
 import urllib.request
 
 from playwright.sync_api import sync_playwright
+from browser_support import ADMIN_TEST, mock_admin_login
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 KEY = 'test-only-key-not-for-production-0123456789'
 ENDPOINT = re.search(r"const DEFAULT_DRIVE_URL = '([^']+)'", (ROOT / 'drive-storage.js').read_text()).group(1)
-ADMIN = re.search(r"adminPassword'\)\.value !== '([^']+)'", (ROOT / 'admin-ui.js').read_text()).group(1)
+ADMIN = ADMIN_TEST
 PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg=='
 ARTIFACTS = pathlib.Path(tempfile.gettempdir()) / 'lesmo-guide-admin'
 
@@ -81,6 +82,7 @@ def main():
                         route.abort()
 
                 context.route('**/*', bridge)
+                mock_admin_login(context)
                 page = context.new_page()
                 page.actions = actions
                 page.dialogs = []
@@ -100,6 +102,7 @@ def main():
                 page.locator('#driveKey').fill(KEY)
                 page.locator('#driveConnect').click()
                 page.wait_for_function("document.body.classList.contains('driveConnected')")
+                page.evaluate("switchSection('anagrafica')")
                 return page
 
             def open_admin(page):

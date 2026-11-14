@@ -32,3 +32,21 @@
   .adminTop { top: -15px; margin: -15px -15px 0; padding: 12px 15px; }
   .adminDialog .btn { min-height: 44px; }
 }
+.adminTabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 20px}
+.adminTabs .btn{min-height:44px}
+#adminArchivePanel[hidden],#adminTreesPanel[hidden]{display:none!important}
+.adminOverlay.archiveOpen .adminDialog{width:min(1100px,100%)}
+#adminArchivePanel{min-width:0}
+#adminArchivePanel>h3{font-size:20px;margin:0 0 16px}
+#adminArchivePanel #viewArchivio{display:block}
+#adminArchivePanel #viewArchivio .v2ArchNav{display:flex;flex-wrap:wrap}
+#adminArchivePanel .archiveCards{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+#adminArchivePanel .driveCard{margin-top:0}
+#adminArchivePanel .archiveBtns{display:flex;gap:8px;flex-wrap:wrap}
+#adminArchivePanel #viewFoto .workCard{margin:12px 0;padding:16px}
+#adminArchivePanel .quickToolbar{flex-wrap:wrap}
+#adminArchivePanel #archiveDataTools:not(.v2LegacyHidden),#adminArchivePanel #archiveHistoricalTools:not(.v2LegacyHidden){display:block!important}
+#archiveHistoricalTools>summary{cursor:pointer;min-height:44px;padding:12px 0;font-size:14px;font-weight:750;color:#3d653b}
+#archiveHistoricalTools #historicalImportCard{margin-top:14px}
+#adminArchivePanel #archiveHistoricalTools #historicalImportCard{display:block!important}
+body.mobileMode #adminArchivePanel #archiveDataTools #importCsvWork{display:inline-flex}

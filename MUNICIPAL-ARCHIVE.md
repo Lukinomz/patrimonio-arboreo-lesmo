@@ -73,3 +73,35 @@ Il risultato mostrato nei moduli, nelle schede, nel registro e nei riepiloghi
 (es. 147,6 → 150 cm). I diametri dei fusti, il calcolo √Σd² e i valori salvati
 negli snapshot e nei backup conservano la precisione originale. I diametri
 degli alberi singoli mantengono la visualizzazione precedente.
+
+## Navigazione e operazioni sul campo
+
+Dopo l’accesso si apre **Patrimonio Arboreo & Urbano**, la panoramica basata
+sulle statistiche esistenti, inizialmente su Tutti. Le altre sezioni principali
+sono **Anagrafica**, **Censimento e Monitoraggio**, **Mappa** e **Guida**, con
+gli stessi nomi su PC e smartphone. La Guida usa i nuovi percorsi.
+
+La categoria selezionata è locale alla sezione: consultare gli arredi in
+Anagrafica non cambia il modulo di censimento o le statistiche. Aprire un
+albero dalla mappa seleziona il modulo arboreo; dopo il salvataggio di un nuovo
+albero si torna al registro degli alberi. Gli interventi appena creati aprono
+l’elenco pertinente ai destinatari.
+
+**Archivio e backup** è una sezione dell’area **Admin**, protetta dall’accesso
+amministrativo esistente. Sono stati spostati gli stessi elementi e comandi,
+conservando collegamenti locali, Drive, backup, ripristino, importazioni,
+esportazioni, foto rapide e fotografie da associare. Le schede ordinarie e
+le rilevazioni continuano a consentire l’aggiunta di fotografie.
+
+La barra **Livelli / Nuovo elemento** è esterna al piano della mappa. Il menu
+Livelli distingue alberi, arredi e giochi e offre **Seleziona tutto** con stato
+parziale e **Solo alberi**. I filtri sanitari e l’elenco Da posizionare rimangono
+disponibili nello stesso menu. La mappa termina sopra la navigazione mobile,
+rendendo utilizzabili zoom, schede e comandi anche su schermi stretti.
+
+`python tests/navigation-map-browser.py` verifica questi percorsi su sei
+configurazioni, compreso il telefono in orizzontale. Il backup conserva
+91 alberi fittizi, storico, foto, arredi e metadati; navigazione e selezione
+dei livelli non scrivono nell’archivio. Le prove dell’area Admin sostituiscono
+soltanto nella risposta JavaScript locale il controllo di accesso con una
+password di prova, senza estrarre o utilizzare la password dell’app.

@@ -11,6 +11,7 @@ import threading
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from playwright.sync_api import sync_playwright
+from browser_support import mock_admin_login
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 KEY = 'test-only-key-not-for-production-0123456789'
@@ -75,11 +76,13 @@ def main():
                     elif route.request.url.startswith(base): route.continue_()
                     else: route.abort()
                 context.route('**/*', bridge)
+                mock_admin_login(context)
                 page = context.new_page()
                 page.on('pageerror', lambda error: errors.append(str(error)))
                 page.goto(base)
                 page.locator('#driveKey').fill(KEY); page.locator('#driveConnect').click()
                 page.wait_for_function("document.body.classList.contains('driveConnected')")
+                page.evaluate("switchSection('anagrafica')")
                 return page
 
             page = new_page()
@@ -188,6 +191,7 @@ def main():
 
             # Statistiche: conteggi, torte, dati di dettaglio, drill-down e bilancio senza doppie perdite.
             page.locator('.mainNav [data-view="statistiche"]').click()
+            page.locator('[data-mun-category="trees"]').click()
             metrics=page.locator('.analyticsMetric > strong').all_text_contents()
             assert metrics[:4] == ['67','67','45','5'], metrics
             assert sum(int(v) for v in page.locator('#analyticsHealth .analyticsLegend strong').all_text_contents()) == 67
@@ -209,6 +213,7 @@ def main():
             page.locator('#analyticsHealth [data-value="watch"]').click()
             assert page.locator('#overviewStatus').input_value() == 'watch' and len(codes()) == 23
             page.locator('.mainNav [data-view="statistiche"]').click()
+            page.locator('[data-mun-category="trees"]').click()
             page.locator('[data-analytics-filter="overviewStatus"][data-value="attention"]').click()
             assert page.locator('#overviewStatus').input_value() == 'attention'
             assert page.locator('#registrySummary').inner_text() == '45 di 67 schede'
@@ -216,6 +221,7 @@ def main():
             # Zero record non deve generare percentuali o grafici non validi.
             empty_page=new_page()
             empty_page.evaluate("trees=[];photos=[];historyEvents=[];renderDashboard();switchSection('statistiche')")
+            empty_page.locator('[data-mun-category="trees"]').click()
             assert empty_page.locator('.analyticsMetric > strong').all_text_contents() == ['0']*6
             assert 'NaN' not in empty_page.locator('#statisticsDashboard').inner_html()
             assert 'Infinity' not in empty_page.locator('#statisticsDashboard').inner_html()
@@ -265,6 +271,7 @@ def main():
                 mobile.screenshot(path=str(ARTIFACTS / f'registry-mobile-{width}.png'), full_page=False)
                 assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth')
                 mobile.locator('[data-mobile-view="statistiche"]').click()
+                mobile.locator('[data-mun-category="trees"]').click()
                 assert mobile.locator('#analyticsHealth svg').is_visible()
                 assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth')
                 mobile.screenshot(path=str(ARTIFACTS / f'statistics-mobile-{width}.png'))

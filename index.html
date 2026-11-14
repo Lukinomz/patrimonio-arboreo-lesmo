@@ -1210,7 +1210,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 </style><link rel="stylesheet" href="drive-storage.css?v=4"/>
 <link rel="stylesheet" href="visual-theme.css?v=9"/>
 <link rel="stylesheet" href="user-guide.css?v=1"/>
-<link rel="stylesheet" href="admin-ui.css?v=2"/>
+<link rel="stylesheet" href="admin-ui.css?v=3"/>
 <link rel="stylesheet" href="registry-table.css?v=2"/>
 <script src="column-filters.js?v=2"></script>
 <script src="registry-table.js?v=6"></script>
@@ -1222,11 +1222,17 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <script src="group-census.js?v=4"></script>
 <script src="municipal-data.js?v=3"></script>
 <script src="context-options.js?v=1"></script>
-<link rel="stylesheet" href="municipal.css?v=4"/>
+<link rel="stylesheet" href="municipal.css?v=5"/>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
-<nav aria-label="Sezioni dell’app" class="mainNav"><button class="navChoice active" data-view="anagrafica" type="button"><span class="navIcon" aria-hidden="true">▤</span> <span>Anagrafica</span></button><button class="navChoice" data-view="censimento" type="button"><span class="navIcon" aria-hidden="true">◈</span> <span>Rilevazioni</span></button><button class="navChoice" data-view="mappa" type="button"><span class="navIcon" aria-hidden="true">⌖</span> <span>Mappa</span></button><button class="navChoice" data-view="statistiche" type="button"><span class="navIcon" aria-hidden="true">▥</span> <span>Statistiche</span></button><button class="navChoice" data-view="archivio" type="button"><span class="navIcon" aria-hidden="true">▣</span> <span>Archivio</span></button><button class="navChoice" data-view="guida" type="button"><span class="navIcon" aria-hidden="true">?</span> <span>Guida</span></button></nav>
+<nav aria-label="Sezioni dell’app" class="mainNav">
+<button class="navChoice active" data-view="statistiche" type="button"><span class="navIcon" aria-hidden="true">▥</span><span>Patrimonio Arboreo &amp; Urbano</span></button>
+<button class="navChoice" data-view="anagrafica" type="button"><span class="navIcon" aria-hidden="true">▤</span><span>Anagrafica</span></button>
+<button class="navChoice" data-view="censimento" type="button"><span class="navIcon" aria-hidden="true">◈</span><span>Censimento e Monitoraggio</span></button>
+<button class="navChoice" data-view="mappa" type="button"><span class="navIcon" aria-hidden="true">⌖</span><span>Mappa</span></button>
+<button class="navChoice" data-view="guida" type="button"><span class="navIcon" aria-hidden="true">?</span><span>Guida</span></button>
+</nav>
 <div class="wrap"><aside class="side" id="side">
 <div class="archiveBanner"><strong id="folderName">Archivio locale da collegare</strong><span id="folderHint">Seleziona una cartella sul PC per salvare tutti gli alberi e le foto.</span><button class="btn muted" id="chooseFolder" type="button">📁 Seleziona cartella sul PC</button></div><div class="tabs"><button class="tab active" data-tab="list">Alberi</button><button class="tab" data-tab="tools">Strumenti</button><button class="tab" data-tab="help">Info</button></div><div class="stats"><div class="stat"><strong id="total">0</strong><small>Censiti</small></div><div class="stat"><strong id="watch">0</strong><small>Monitorare</small></div><div class="stat"><strong id="critical">0</strong><small>Critici</small></div></div>
 <div class="panel" id="listPanel"><input aria-label="Cerca" class="search" id="search" placeholder="Cerca albero o codice…"/><select class="filter" id="filter"><option value="all">Tutti gli stati</option><option value="ok">Sano</option><option value="sick">Malato</option><option value="watch">Da monitorare</option><option value="critical">Critico</option><option value="dead">Morto</option><option value="cut">Tagliato / abbattuto</option><option value="fallen">Caduto</option><option value="removed">Non presente (storico)</option><option value="unknown">Non valutato</option></select><div id="list"></div></div>
@@ -1244,14 +1250,14 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <div class="guideQuickStart"><div><small>1 · TROVA L’ALBERO</small><strong>Cerca prima di crearne uno</strong><p>In Anagrafica cerca il codice, la specie o la via.</p></div><div><small>2 · SCEGLI COSA FARE</small><strong>Apri la sua scheda</strong><p>Da qui puoi vedere le informazioni, aggiungere una rilevazione o aprire le fotografie.</p></div><div><small>3 · CONFERMA</small><strong>Premi il pulsante di salvataggio</strong><p>Attendi il messaggio di conferma prima di chiudere la pagina.</p></div></div></div>
 <div class="guideLayout"><nav class="guideContents" aria-label="Argomenti della guida"><h3>Di cosa hai bisogno?</h3><button type="button" data-guide-section="guida-accesso">Entrare nell’app</button><button type="button" data-guide-section="guida-ricerca">Trovare un albero</button><button type="button" data-guide-section="guida-nuovo">Aggiungere un nuovo albero</button><button type="button" data-guide-section="guida-rilevazione">Registrare una rilevazione</button><button type="button" data-guide-section="guida-foto">Vedere e aggiungere foto</button><button type="button" data-guide-section="guida-mappa">Usare la mappa</button><button type="button" data-guide-section="guida-salvataggi">Salvare e vedere gli aggiornamenti</button><button type="button" data-guide-section="guida-domande">Dubbi frequenti</button></nav>
 <div class="guideArticles">
-<section class="guideArticle" id="guida-accesso" tabindex="-1"><h3>1. Entra nell’app</h3><ol><li>Apri il link dell’app ricevuto dal responsabile.</li><li>Inserisci la <strong>password di accesso</strong> ricevuta e premi <strong>Accedi</strong>.</li><li>Attendi l’apertura dell’archivio condiviso: ritroverai gli alberi già inseriti dagli altri collaboratori.</li></ol><p class="guideNote">Per il normale utilizzo basta la password. Se non la conosci, chiedila al responsabile. Non devi configurare servizi o creare un nuovo archivio.</p></section>
+<section class="guideArticle" id="guida-accesso" tabindex="-1"><h3>1. Entra nell’app</h3><ol><li>Apri il link dell’app ricevuto dal responsabile.</li><li>Inserisci la <strong>password di accesso</strong> ricevuta e premi <strong>Accedi</strong>.</li><li>Dopo l’accesso si apre Patrimonio Arboreo &amp; Urbano, con la panoramica aggiornata. In Anagrafica ritrovi le schede già inserite.</li></ol><p class="guideNote">Per il normale utilizzo basta la password. Se non la conosci, chiedila al responsabile. Non devi configurare servizi o creare un nuovo archivio.</p></section>
 <section class="guideArticle" id="guida-ricerca" tabindex="-1"><h3>2. Trova un albero già presente</h3><ol><li>Apri <strong>Anagrafica</strong>.</li><li>Scrivi nella ricerca il codice, la specie o la via. Se vuoi restringere l’elenco, scegli i filtri, per esempio lo stato di salute o la presenza di foto.</li><li>Premi il <strong>codice dell’albero</strong> per aprire la scheda.</li><li>Scegli <strong>Anagrafica</strong> per correggere specie, indirizzo o posizione; <strong>Rilevazione</strong> per registrare una nuova osservazione; <strong>Fotografie</strong> per vedere le immagini.</li></ol><p class="guideNote">Prima di inserire un albero nuovo, controlla sempre che non sia già presente.</p><button class="btn" type="button" data-guide-view="anagrafica">Vai all’elenco alberi</button></section>
 <section class="guideArticle" id="guida-nuovo" tabindex="-1"><h3>3. Aggiungi un nuovo albero</h3><ol><li>Premi <strong>Nuovo albero</strong>. Scegli <strong>Seleziona un albero dalla mappa</strong> e tocca il punto esatto, oppure <strong>Importa albero manualmente</strong> per compilare la scheda senza posizione.</li><li>Controlla il codice proposto. L’app sceglie il primo numero libero; puoi anche scriverlo tu, ma un codice già usato viene rifiutato.</li><li>Inserisci la specie, la via o la località e la data della prima osservazione. Se non conosci la specie, scrivi <strong>Non identificata</strong>. Compila le misure solo se le conosci.</li><li>Se l’albero è stato appena piantato, scegli <strong>Nuova piantumazione</strong> e indica anche la data in cui è stato piantato.</li><li>Puoi aggiungere foto prima di salvare. Premi <strong data-guide-label="v2AnaSave">Salva albero e fotografie</strong> e attendi la conferma.</li></ol><p class="guideExample"><strong>Esempio del codice:</strong> se LESMO-A0001 e LESMO-A0003 sono già usati, il prossimo codice proposto è <strong>LESMO-A0002</strong>.</p><p class="guideNote">Puoi salvare un albero anche senza posizione sulla mappa. Lo ritroverai nell’elenco e potrai aggiungere la posizione in seguito.</p></section>
-<section class="guideArticle" id="guida-rilevazione" tabindex="-1"><h3>4. Registra ciò che osservi</h3><ol><li>Apri <strong>Rilevazioni</strong>.</li><li>Cerca e seleziona l’albero. Prima di continuare controlla il suo codice e la località.</li><li>Indica la <strong>data dell’osservazione</strong>. Aggiorna lo stato dell’albero e la sua salute; compila solo le misure rilevate durante questa visita.</li><li>Aggiungi le tue osservazioni e, se utili, le fotografie della visita.</li><li>Premi <strong data-guide-label="v2CensusSave">Salva rilevazione</strong> e attendi il messaggio di conferma.</li></ol><p class="guideNote">Lascia vuota una misura che non hai rilevato: il valore precedente viene mantenuto. Se la data è più vecchia dell’ultima rilevazione, l’app ti avvisa e conserva l’osservazione nello storico.</p><p>Per annotare una potatura, un trattamento o un’altra attività, apri il riquadro <strong>Eventi e altre attività</strong> nella stessa sezione. Scegli il tipo di attività, indica data e descrizione, poi premi <strong>Registra attività</strong>.</p><button class="btn" type="button" data-guide-view="censimento">Vai alle rilevazioni</button></section>
+<section class="guideArticle" id="guida-rilevazione" tabindex="-1"><h3>4. Registra ciò che osservi</h3><ol><li>Apri <strong>Censimento e Monitoraggio</strong>.</li><li>Cerca e seleziona l’albero. Prima di continuare controlla il suo codice e la località.</li><li>Indica la <strong>data dell’osservazione</strong>. Aggiorna lo stato dell’albero e la sua salute; compila solo le misure rilevate durante questa visita.</li><li>Aggiungi le tue osservazioni e, se utili, le fotografie della visita.</li><li>Premi <strong data-guide-label="v2CensusSave">Salva rilevazione</strong> e attendi il messaggio di conferma.</li></ol><p class="guideNote">Lascia vuota una misura che non hai rilevato: il valore precedente viene mantenuto. Se la data è più vecchia dell’ultima rilevazione, l’app ti avvisa e conserva l’osservazione nello storico.</p><p>Per annotare una potatura, un trattamento o un’altra attività, apri il riquadro <strong>Eventi e altre attività</strong> nella stessa sezione. Scegli il tipo di attività, indica data e descrizione, poi premi <strong>Registra attività</strong>.</p><button class="btn" type="button" data-guide-view="censimento">Vai alle rilevazioni</button></section>
 <section class="guideArticle" id="guida-foto" tabindex="-1"><h3>5. Vedi e aggiungi le fotografie</h3><ol><li>Da <strong>Anagrafica / Alberi</strong>, cerca l’albero e apri la sua scheda.</li><li>Premi <strong>Fotografie</strong> per vedere le immagini già collegate a quell’albero.</li><li>Per aggiungere foto durante una nuova registrazione, premi <strong data-guide-label="v2AnaAddPhotos">Aggiungi fotografie</strong> nella scheda che stai compilando. Durante una visita, usa <strong data-guide-label="v21SurveyAddPhoto">Aggiungi foto</strong> nella rilevazione.</li><li>Sul telefono puoi usare anche <strong>Scatta foto</strong>. Se il browser lo chiede, consenti l’uso della fotocamera.</li><li>Controlla di avere scelto l’albero giusto, indica la data dello scatto se la conosci e salva la scheda o la rilevazione.</li></ol><p class="guideNote">Vedere una foto nell’anteprima non significa che sia già salvata. Attendi sempre la conferma dopo il salvataggio.</p></section>
-<section class="guideArticle" id="guida-mappa" tabindex="-1"><h3>6. Riconosci l’albero sulla mappa</h3><ol><li>Apri <strong>Mappa</strong> e ingrandisci la zona che ti interessa. Puoi cercare una via per raggiungerla più velocemente.</li><li>Premi un segnaposto per vedere a quale albero corrisponde.</li><li>Dal telefono puoi usare il GPS, cioè la posizione rilevata dal dispositivo. Consenti l’accesso alla posizione se il browser lo chiede.</li></ol><p class="guideNote">Il GPS rileva dove si trova il telefono. Se sei lontano dal tronco, controlla e correggi il punto sulla mappa. Gli alberi senza posizione restano nell’elenco, ma non compaiono sulla mappa.</p><p>In <strong>Statistiche</strong>, trovi i riepiloghi degli alberi e delle attività registrate.</p><button class="btn" type="button" data-guide-view="mappa">Apri la mappa</button></section>
+<section class="guideArticle" id="guida-mappa" tabindex="-1"><h3>6. Riconosci l’albero sulla mappa</h3><ol><li>Apri <strong>Mappa</strong> e ingrandisci la zona che ti interessa. Puoi cercare una via per raggiungerla più velocemente.</li><li>Il pulsante <strong>Livelli</strong>, nella barra sopra la mappa, permette di scegliere alberi, arredi e giochi. Usa <strong>Seleziona tutto</strong> o <strong>Solo alberi</strong> per cambiare rapidamente la vista.</li><li>Premi un segnaposto per vedere a quale elemento corrisponde.</li><li>Dal telefono puoi usare il GPS, cioè la posizione rilevata dal dispositivo. Consenti l’accesso alla posizione se il browser lo chiede.</li></ol><p class="guideNote">Il GPS rileva dove si trova il telefono. Se sei lontano dal tronco, controlla e correggi il punto sulla mappa. Gli alberi senza posizione restano nell’elenco, ma non compaiono sulla mappa.</p><p>In <strong>Patrimonio Arboreo &amp; Urbano</strong> trovi i riepiloghi degli alberi e delle attività registrate.</p><button class="btn" type="button" data-guide-view="mappa">Apri la mappa</button></section>
 <section class="guideArticle" id="guida-salvataggi" tabindex="-1"><h3>7. Salva e vedi le modifiche degli altri</h3><p><strong>Per salvare il tuo lavoro:</strong> premi il pulsante di salvataggio nella scheda o nella rilevazione. Con Google Drive collegato, l’app invia la modifica all’archivio condiviso. Attendi la conferma prima di chiudere o cambiare pagina.</p><p><strong>Per vedere il lavoro degli altri:</strong> premi <strong data-guide-label="driveRefreshRegistry">Aggiorna database</strong> in Anagrafica. Il pulsante rilegge gli ultimi dati salvati, senza chiederti di nuovo la password finché la pagina resta aperta. “DB” significa semplicemente l’insieme dei dati dell’app.</p><p class="guideNote">Scrivere in un campo non basta per salvare. Aggiornare i dati non sostituisce il pulsante di salvataggio. Senza connessione Internet non puoi salvare nell’archivio Drive condiviso.</p><p>Se compare un avviso che un’altra persona ha modificato l’archivio, la tua modifica non è stata confermata. Non continuare a salvare: conserva una copia del lavoro con il pulsante indicato dall’app e chiedi aiuto al responsabile.</p></section>
-<section class="guideArticle" id="guida-domande" tabindex="-1"><h3>Dubbi frequenti</h3><details><summary>Devo reinserire la password ogni volta che aggiorno i dati?</summary><p>No. Usa il pulsante di aggiornamento dell’app. Se ricarichi la pagina del browser, chiudi l’app o scegli Esci, dovrai accedere di nuovo.</p></details><details><summary>Come esco da una scheda senza salvarla?</summary><p>Premi la X in alto oppure Annulla, se presente. I dati non ancora salvati verranno scartati; se ci sono foto in attesa, l’app può chiederti conferma.</p></details><details><summary>Non vedo un albero sulla mappa: è stato perso?</summary><p>Controlla prima l’elenco in Anagrafica / Alberi. Potrebbe non avere ancora una posizione oppure essere nascosto dai filtri della mappa.</p></details><details><summary>La specie o l’indirizzo sono sbagliati: dove li correggo?</summary><p>Apri la scheda dell’albero e scegli Anagrafica. Per registrare invece una nuova osservazione sulla salute o sulle misure usa Rilevazioni.</p></details><details><summary>Non compare la conferma del salvataggio: cosa faccio?</summary><p>Attendi che l’operazione finisca e leggi l’eventuale messaggio. Se compare un errore, non considerare il lavoro salvato. Controlla la connessione e chiedi aiuto al responsabile se il problema continua.</p></details></section>
+<section class="guideArticle" id="guida-domande" tabindex="-1"><h3>Dubbi frequenti</h3><details><summary>Dove sono backup e importazioni?</summary><p>Il responsabile li trova in <strong>Admin → Archivio e backup</strong>, insieme alle foto rapide e da associare.</p></details><details><summary>Devo reinserire la password ogni volta che aggiorno i dati?</summary><p>No. Usa il pulsante di aggiornamento dell’app. Se ricarichi la pagina del browser, chiudi l’app o scegli Esci, dovrai accedere di nuovo.</p></details><details><summary>Come esco da una scheda senza salvarla?</summary><p>Premi la X in alto oppure Annulla, se presente. I dati non ancora salvati verranno scartati; se ci sono foto in attesa, l’app può chiederti conferma.</p></details><details><summary>Non vedo un albero sulla mappa: è stato perso?</summary><p>Controlla prima l’elenco in Anagrafica / Alberi. Potrebbe non avere ancora una posizione oppure essere nascosto dai filtri della mappa.</p></details><details><summary>La specie o l’indirizzo sono sbagliati: dove li correggo?</summary><p>Apri la scheda dell’albero e scegli Anagrafica. Per registrare invece una nuova osservazione sulla salute o sulle misure usa Censimento e Monitoraggio.</p></details><details><summary>Non compare la conferma del salvataggio: cosa faccio?</summary><p>Attendi che l’operazione finisca e leggi l’eventuale messaggio. Se compare un errore, non considerare il lavoro salvato. Controlla la connessione e chiedi aiuto al responsabile se il problema continua.</p></details></section>
 </div></div></section>
 <div class="workView" id="viewRiepilogo">
 <div class="v2SectionActions"><div><h2>Registro anagrafico</h2></div><div class="v2ActionRow"><button class="btn" id="v2AnaSelectMap" type="button">⌖ Esplora la mappa</button><button aria-hidden="true" class="btn main v2LegacyHidden" id="v2AnaNew" type="button">＋ Nuovo albero</button></div></div>
@@ -1690,7 +1696,7 @@ function startAdd(){
  if(document.body.classList.contains('mobileMode'))tell('Ora seleziona un albero dalla mappa. Premi “Annulla selezione” per uscire.');
  else showMapSelectionInstruction();
 }
-function showAddChoice(){if(window.Municipal&&Municipal.categoryFilter!=='trees'){showMunicipalChoice();return;}
+function showAddChoice(){if(window.Municipal&&['anagrafica','censimento'].includes(currentSection)&&Municipal.categoryFilter!=='trees'){showMunicipalChoice();return;}
  $('addTreeChoice').classList.remove('hidden');
  $('chooseMapTree').focus();
 }
@@ -2663,7 +2669,7 @@ async function v2SaveAnag(e){
    v2D('v2AnaPhotoFeedback').className='v2AnaPhotoMsg error';v2D('v2AnaPhotoFeedback').textContent=message;
    refresh();tell(message);return;
   }
-  v2ClearAnaPhotos();v2CloseAnag({keep:true,force:true});v2AnaMapDraft=null;v2SelectedId=id;refresh();switchSection('anagrafica');
+  v2ClearAnaPhotos();v2CloseAnag({keep:true,force:true});v2AnaMapDraft=null;v2SelectedId=id;refresh();window.setMunicipalSectionCategory?.('anagrafica','trees');switchSection('anagrafica');
   const savedTree=trees.find(x=>x.id===id);if(savedTree&&isValid(savedTree)){focusedTreeId=id;mp.lat=+savedTree.lat;mp.lon=+savedTree.lon;drawPins();}
   tell('Anagrafica '+code+' salvata'+(result.saved?' · '+result.saved+' fotografia/e archiviate':'')+'. Il primo censimento è registrato nello storico.');
  }catch(ex){if(ex.code==='CONFLICT')v2CodeWarning('L’archivio è cambiato mentre compilavi: nessun dato è stato sovrascritto. Chiudi la scheda, premi Aggiorna DB e riprova.');tell('Salvataggio anagrafica non riuscito: '+ex.message);console.error(ex)}
@@ -2712,19 +2718,23 @@ async function v2SaveGeneralEvent(){const code=v2D('v2EventCode').value.trim(),t
  const ev={id:uniqueID(),treeId:t.id,type:typ,date,created:new Date().toISOString(),source:'Monitoraggio 2.0',operator:v2D('v2EventOperator').value.trim(),description:desc,snapshot:makeTreeSnapshot(t)};
  historyEvents.push(ev);try{await saveArchive();refresh();v2D('v2EventDescription').value='';tell('Evento '+publicCode(t)+' registrato nello storico.')}catch(ex){historyEvents=historyEvents.filter(x=>x.id!==ev.id);tell('Evento non salvato: '+ex.message)}
 }
-// Navigation: six meaningful sections. Auxiliary history and bulk photos remain in context.
+// Main sections; archive and bulk photos are hosted in the authenticated Admin area.
 let v2ArchivePanel='archive',v2MonitorTimeline=false;
 switchSection=function(which){
- if(which==='monitoraggio')which='censimento';if(which==='riepilogo')which='anagrafica';if(which==='storico'){which='monitoraggio';v2MonitorTimeline=true;}if(which==='foto'){which='archivio';v2ArchivePanel='photos';}
+ window.closeMapLayers?.();
+ if(which==='archivio'||which==='foto'){window.openAdminArchive?.(which==='foto'?'photos':v2ArchivePanel);return;}
+ window.closeAdmin?.();
+ if(which==='monitoraggio')which='censimento';if(which==='riepilogo')which='anagrafica';if(which==='storico'){which='censimento';v2MonitorTimeline=true;}if(which==='foto'){which='archivio';v2ArchivePanel='photos';}
  if(!['anagrafica','censimento','monitoraggio','mappa','statistiche','archivio','guida'].includes(which))which='anagrafica';
- currentSection=which;document.body.classList.toggle('guideOpen',which==='guida');const map=which==='mappa';v2D('app').classList.toggle('dashboard',!map);v2D('app').classList.toggle('fullMap',map);
+ window.prepareMunicipalSection?.(which);
+ currentSection=which;document.body.classList.toggle('anagraficaOpen',which==='anagrafica');document.body.classList.toggle('guideOpen',which==='guida');const map=which==='mappa';v2D('app').classList.toggle('dashboard',!map);v2D('app').classList.toggle('fullMap',map);
  document.querySelectorAll('.navChoice').forEach(b=>{const yes=b.dataset.view===which;b.classList.toggle('active',yes);b.setAttribute('aria-current',yes?'page':'false');});
- for(const [key,id] of Object.entries({anagrafica:'viewRiepilogo',censimento:'viewCensimento',monitoraggio:'viewMonitoraggio',statistiche:'viewStatistiche',archivio:'viewArchivio',guida:'viewGuida'}))v2D(id).classList.toggle('hidden',key==='monitoraggio'?which!=='censimento':which!==key);
+ for(const [key,id] of Object.entries({anagrafica:'viewRiepilogo',censimento:'viewCensimento',monitoraggio:'viewMonitoraggio',statistiche:'viewStatistiche',guida:'viewGuida'}))v2D(id).classList.toggle('hidden',key==='monitoraggio'?which!=='censimento':which!==key);
  // Monitoring keeps history in the same section, on demand.
- v2D('viewStorico').classList.toggle('hidden',which!=='monitoraggio'||!v2MonitorTimeline);
+ v2D('viewStorico').classList.toggle('hidden',which!=='censimento'||!v2MonitorTimeline);
  v2D('viewFoto').classList.toggle('hidden',which!=='archivio'||v2ArchivePanel!=='photos');
- for(const c of v2D('viewArchivio').children)if(c.id!=='viewFoto'&&c.classList?.contains('workCard')||c.classList?.contains('archiveCards'))c.classList.toggle('v2LegacyHidden',which==='archivio'&&v2ArchivePanel==='photos');
- const heads={anagrafica:['Anagrafica alberi','Registro del patrimonio arboreo'],censimento:['Rilevazioni','Ispezioni, condizioni ed eventi'],monitoraggio:['Rilevazioni','Ispezioni ed eventi'],statistiche:['Statistiche','Andamento e bilancio arboreo'],archivio:['Archivio','Dati, fotografie e backup'],guida:['Guida all’uso','Istruzioni per le operazioni di tutti i giorni']};
+ // Archive visibility is managed by the authenticated Admin panel.
+ const heads={anagrafica:['Anagrafica',''],censimento:['Censimento e Monitoraggio',''],monitoraggio:['Censimento e Monitoraggio',''],statistiche:['Patrimonio Arboreo & Urbano',''],archivio:['Archivio',''],guida:['Guida all’uso','']};
  if(!map){v2D('workTitle').textContent=heads[which][0];v2D('workSubtitle').textContent=heads[which][1];}else{setTimeout(()=>{resetTiles();draw()},30)}
  renderDashboard();v2DrawCensusSearch();v2UpdateArchiveButtons();
  if(which!=='mappa')v2MapTask=null;
@@ -2732,6 +2742,14 @@ switchSection=function(which){
 // Dashboard delegates to legacy renderers, with no derived data copies.
 refresh=function(){v2OldRefresh();v2DrawCensusSearch();if(v2SelectedId)v2DrawSurveyList();};
 function v2UpdateArchiveButtons(){v2D('v2ArchiveTab').classList.toggle('main',v2ArchivePanel==='archive');v2D('v2PhotoTab').classList.toggle('main',v2ArchivePanel==='photos');}
+function v2ShowArchivePanel(panel=v2ArchivePanel){
+ v2ArchivePanel=panel==='photos'?'photos':'archive';
+ v2D('viewFoto').classList.toggle('hidden',v2ArchivePanel!=='photos');
+ for(const child of v2D('viewArchivio').children){
+  if(child.id!=='viewFoto'&&(child.classList.contains('workCard')||child.classList.contains('archiveCards')))child.classList.toggle('v2LegacyHidden',v2ArchivePanel==='photos');
+ }
+ v2UpdateArchiveButtons();
+}
 function v2RegisterUI(){
  const on=(id,fn)=>v2D(id).addEventListener('click',fn);
  // Replace older entry choices while preserving same menu names.
@@ -2745,14 +2763,14 @@ function v2RegisterUI(){
  on('v2DetailClose',v2CloseDetail);v2D('v2DetailOverlay').addEventListener('click',e=>{if(e.target===v2D('v2DetailOverlay'))v2CloseDetail()});
  on('v2DetailAnag',()=>{const t=trees.find(x=>x.id===v2DetailId);v2OpenAnag(t)});
  on('v2DetailCensus',()=>{const id=v2DetailId;v2CloseDetail();v2SelectCensus(id);switchSection('censimento')});
- on('v2DetailEvent',()=>{const t=trees.find(x=>x.id===v2DetailId);v2CloseDetail();if(t){v2D('lifeCode').value=publicCode(t);v2D('v2EventCode').value=publicCode(t)}switchSection('censimento');v2D('v21EventsCollapse').open=true});
+ on('v2DetailEvent',()=>{window.setMunicipalSectionCategory?.('censimento','trees');const t=trees.find(x=>x.id===v2DetailId);v2CloseDetail();if(t){v2D('lifeCode').value=publicCode(t);v2D('v2EventCode').value=publicCode(t)}switchSection('censimento');v2D('v21EventsCollapse').open=true});
  on('v2DetailPhotos',()=>v2OpenPhotos(v2DetailId));
  on('v2CensusMap',()=>v2JumpMap('censimento'));v2D('v2CensusQuery').addEventListener('input',v2DrawCensusSearch);
  v2D('v2CensusMatches').addEventListener('click',e=>{const b=e.target.closest('[data-cid]');if(b)v2SelectCensus(b.dataset.cid)});
  on('v2CensusAnag',()=>{const t=trees.find(x=>x.id===v2SelectedId);if(t)v2OpenAnag(t)});on('v2CensusPhotos',()=>v2OpenPhotos(v2SelectedId));v2D('v2CensusForm').addEventListener('submit',v2SaveCensus);
  on('v2MonitorMap',()=>v2JumpMap('monitoraggio'));on('v2OpenTimeline',()=>{v2MonitorTimeline=!v2MonitorTimeline;v2D('viewStorico').classList.toggle('hidden',!v2MonitorTimeline);if(v2MonitorTimeline)renderHistoricalView()});
  on('v2EventSave',v2SaveGeneralEvent);on('v2EventPhotos',()=>{const t=getByCode(v2D('v2EventCode').value);if(!t)return v2Warn('Indica un codice albero valido.');v2OpenPhotos(t.id)});
- on('v2ArchiveTab',()=>{v2ArchivePanel='archive';switchSection('archivio')});on('v2PhotoTab',()=>{v2ArchivePanel='photos';switchSection('archivio')});
+ on('v2ArchiveTab',()=>v2ShowArchivePanel('archive'));on('v2PhotoTab',()=>v2ShowArchivePanel('photos'));
  // Legacy paths cannot mutate the tree from a photo-only modal.
  v2D('treeForm').addEventListener('submit',e=>{e.preventDefault();e.stopImmediatePropagation();v2Warn('Per modificare la scheda usa Anagrafica o Censimento.')},true);
  v2D('deleteTree').addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();v2Warn('Registra la morte, caduta o abbattimento in Monitoraggio.')},true);
@@ -2794,7 +2812,7 @@ function v21SetupViews(){
  // Prevent counting a planted tree twice if its record is edited later.
  v2D('lifeType').querySelector('[value="piantumazione"]')?.remove();
  const lifeNote=document.createElement('p');lifeNote.className='v21AnaInfo';lifeNote.textContent='Le nuove piantumazioni si creano in Anagrafica. Qui registri soltanto eventi su alberi già esistenti.';v2D('lifeRegisterCard').prepend(lifeNote);
- const archiveHelp=v2D('viewArchivio');const note=document.createElement('p');note.className='v2Muted';note.textContent='La password condivisa sarà attivata alla distribuzione finale. Per ora proteggi la cartella locale e crea backup: i dati non sono cifrati.';archiveHelp.prepend(note);
+ // Archive tools are grouped in Admin; no obsolete setup instructions.
  // Accesso condiviso da configurare dopo la fase di sviluppo.
  const origDetail=v2Detail;v2Detail=function(t){origDetail(t);const p=v2D('v2DetailContent')?.querySelector('.v2Muted');if(p)p.textContent='Specie, codice e GPS: Anagrafica. Misure, salute ed eventi: Rilevazioni.';};
  const existingEventButton=v2D('v2DetailEvent');existingEventButton.addEventListener('click',()=>{details.open=true},true);
@@ -3028,12 +3046,11 @@ document.addEventListener('DOMContentLoaded',v3InitPicker);
 </div>
 
 <nav id="mFieldNav" class="mFieldNav" aria-label="Navigazione mobile">
-  <button type="button" data-mobile-view="anagrafica"><span>▤</span><small>Anagrafica</small></button>
-  <button type="button" data-mobile-view="censimento"><span>◈</span><small>Rilevazioni</small></button>
-  <button type="button" data-mobile-view="mappa"><span>⌖</span><small>Mappa</small></button>
-  <button type="button" data-mobile-view="statistiche"><span>▥</span><small>Statistiche</small></button>
-  <button type="button" data-mobile-view="archivio"><span>▣</span><small>Archivio</small></button>
-  <button type="button" data-mobile-view="guida"><span>?</span><small>Guida</small></button>
+<button type="button" data-mobile-view="statistiche"><span aria-hidden="true">▥</span><small>Patrimonio Arboreo &amp; Urbano</small></button>
+<button type="button" data-mobile-view="anagrafica"><span aria-hidden="true">▤</span><small>Anagrafica</small></button>
+<button type="button" data-mobile-view="censimento"><span aria-hidden="true">◈</span><small>Censimento e Monitoraggio</small></button>
+<button type="button" data-mobile-view="mappa"><span aria-hidden="true">⌖</span><small>Mappa</small></button>
+<button type="button" data-mobile-view="guida"><span aria-hidden="true">?</span><small>Guida</small></button>
 </nav>
 
 <input id="mCameraInput" type="file" accept="image/*" capture="environment" style="display:none"/>
@@ -3185,7 +3202,7 @@ if(mMobile){
 document.addEventListener('DOMContentLoaded',()=>{
  if(!mMobile)return;
  mAddPanel();document.querySelectorAll('[data-mobile-view]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.mobileView==='mappa')hideTreeCard?.();switchSection(b.dataset.mobileView)}));
- mUpdateNav('anagrafica');mRefreshStatus();mOpenLocal();
+ mUpdateNav(currentSection);mRefreshStatus();mOpenLocal();
 });
 // Select thousands of trees from paginated, thumb-friendly cards on narrow screens.
 function mDrawPickerCards(){
@@ -3226,20 +3243,21 @@ if(mMobile){
 <div id="adminContent" class="hidden">
 <p class="adminNotice">Le modifiche riguardano l’archivio collegato. Se usi Google Drive, saranno visibili anche agli altri collaboratori.</p>
 <p id="adminStatus" class="adminStatus" role="status" aria-live="polite"></p>
-<div class="adminGrid">
+<div class="adminTabs" role="group" aria-label="Sezioni amministrazione"><button type="button" class="btn main" data-admin-panel="trees" aria-pressed="true">Gestione alberi</button><button type="button" class="btn" data-admin-panel="archive" aria-pressed="false">Archivio e backup</button></div>
+<section id="adminTreesPanel"><div class="adminGrid">
 <article class="adminTile adminDeletePanel"><strong>🌳 Correzione errori di censimento</strong><p>Rimuovi dal censimento solo alberi duplicati, inesistenti o inseriti per errore. Alberi morti, caduti o abbattuti restano nello storico.</p><label class="field">Codice albero<select id="adminTreeSelect"><option value="">Seleziona un albero</option></select></label><details id="adminDeleteBulkDetails" class="adminBulkDetails"><summary>Seleziona più alberi</summary><label class="field">Cerca per codice, specie o via<input id="adminTreeSearch" type="search" placeholder="Codice, specie, via…"/></label><div class="adminSelectionBar"><label><input id="adminSelectAll" type="checkbox"/> <span id="adminSelectAllText">Seleziona tutti i risultati</span></label><button class="btn" type="button" id="adminClearSelection">Togli selezione</button></div><div id="adminTreeList" class="adminTreeList" aria-label="Alberi da eliminare"></div><button class="btn" type="button" id="adminShowMore" hidden>Mostra altri alberi</button></details><label class="field">Motivo (facoltativo)<select id="adminDeleteReason"><option value="">Seleziona motivo</option><option value="Duplicato">Duplicato</option><option value="Inserimento errato">Inserimento errato</option><option value="Albero inesistente">Albero inesistente</option><option value="Altro errore di censimento">Altro errore di censimento</option></select></label><label class="field">Descrizione dell’errore (facoltativa)<textarea id="adminDeleteNote" placeholder="Spiega la correzione effettuata"></textarea></label><div class="adminDeleteActions"><span id="adminSelectionCount" role="status" hidden>Nessun albero selezionato</span><button type="button" class="btn danger" id="adminDeleteTree" disabled>Rimuovi albero per errore</button></div></article>
 <article class="adminTile"><strong>↶ Cestino e ripristino</strong><p>Qui puoi recuperare gli alberi eliminati, con le loro rilevazioni e foto. Il cestino è conservato in questo browser: per ritrovarlo usa lo stesso dispositivo e browser.</p><div id="adminTrashList" class="adminTrashList"></div></article>
 <article class="adminTile"><strong>▣ Backup</strong><p>Scarica una copia di tutti gli alberi, con le fotografie e lo storico.</p><button type="button" class="btn" id="adminBackup">Esporta backup completo</button><small>La copia viene scaricata sul tuo computer o telefono.</small></article>
 <article class="adminTile"><strong>◷ Registro correzioni</strong><div id="adminAuditList" class="adminAuditList"></div></article>
 <article class="adminTile"><strong>☁ Google Drive</strong><p>Con Google Drive collegato, una modifica salvata aggiorna l’archivio usato dagli altri collaboratori.</p></article>
-</div><button type="button" class="btn" id="adminLogout" style="margin-top:16px">Esci dall'amministrazione</button></div>
+</div></section><section id="adminArchivePanel" hidden><h3>Archivio e backup</h3></section><button type="button" class="btn" id="adminLogout" style="margin-top:16px">Esci dall'amministrazione</button></div>
 </section></div>
 
 <style>.adminRecord{padding:10px 0;border-bottom:1px solid #e4eae5;font-size:12px}.adminRecord small{display:block;color:#687d70;margin:5px 0}.adminRecord button{font-size:11px;padding:6px 10px}.adminTrashList,.adminAuditList{max-height:250px;overflow:auto}.adminTile textarea{min-height:65px}</style><script src="viewport-layout.js?v=1"></script>
-<script src="drive-storage.js?v=8"></script>
-<script src="admin-ui.js?v=4"></script>
+<script src="drive-storage.js?v=9"></script>
+<script src="admin-ui.js?v=5"></script>
 <script src="user-guide.js?v=1"></script>
 <script src="vendor/qrcode.js?v=1"></script>
 
-<script src="municipal-ui.js?v=5"></script>
+<script src="municipal-ui.js?v=6"></script>
 </body></html>

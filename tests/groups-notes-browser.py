@@ -13,6 +13,7 @@ import threading
 import urllib.request
 from playwright.sync_api import sync_playwright
 
+
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 KEY='test-only-key-not-for-production-0123456789'
 ENDPOINT=re.search(r"const DEFAULT_DRIVE_URL = '([^']+)'",(ROOT/'drive-storage.js').read_text()).group(1)
@@ -53,6 +54,7 @@ def main():
                 page=context.new_page();page.set_default_timeout(7000);page.on('pageerror',lambda e:errors.append(str(e)))
                 page.goto(base);page.locator('#driveKey').fill(KEY);page.locator('#driveConnect').click()
                 page.wait_for_function("document.body.classList.contains('driveConnected')")
+                page.evaluate("switchSection('anagrafica')")
                 return page
             page=page_new()
             assert page.evaluate("formatTreeDiameter(147.6,{recordType:'multistem'})")=='150'
@@ -186,6 +188,7 @@ def main():
             unknown=next(t for t in data()['trees'] if t['species']=='Specie miste')
             assert unknown['treeCount'] is None
             page.locator('.mainNav [data-view="statistiche"]').click()
+            page.locator('[data-mun-category="trees"]').click()
             assert page.locator('.analyticsMetric > strong').all_text_contents()[:2]==['4','52']
             assert '50 stimati' in page.locator('.analyticsMetric').nth(1).inner_text() and '1 gruppo senza quantità' in page.locator('.analyticsMetric').nth(1).inner_text()
             page.locator('.mainNav [data-view="mappa"]').click();page.locator('#newGroupAreaMap').click();page.locator('#groupAreaTools').wait_for(state='visible')

@@ -1,6 +1,7 @@
 """Quattro contesti fissi e rimozione gestione parchi. Drive simulato, 91 schede e storico intatti."""
 import copy,csv,functools,http.server,json,pathlib,re,subprocess,threading,urllib.request
 from playwright.sync_api import sync_playwright
+from browser_support import ADMIN_TEST, mock_admin_login
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 KEY='test-only-key-not-for-production-0123456789'
 ENDPOINT=re.search(r"const DEFAULT_DRIVE_URL = '([^']+)'",(ROOT/'drive-storage.js').read_text()).group(1)
@@ -39,7 +40,7 @@ def main():
                         with urllib.request.urlopen(request) as response:route.fulfill(status=200,content_type='application/json',body=response.read())
                     elif route.request.url.startswith(base):route.continue_()
                     else:route.abort()
-                context.route('**/*',bridge);page=context.new_page();page.set_default_timeout(7000);page.on('pageerror',lambda e:errors.append(str(e)));page.on('dialog',lambda d:d.accept());page.goto(base);page.locator('#driveKey').fill(KEY);page.locator('#driveConnect').click();page.wait_for_function("document.body.classList.contains('driveConnected')");page.wait_for_selector('#munRegistry',state='attached');return page
+                context.route('**/*',bridge);mock_admin_login(context);page=context.new_page();page.set_default_timeout(7000);page.on('pageerror',lambda e:errors.append(str(e)));page.on('dialog',lambda d:d.accept());page.goto(base);page.locator('#driveKey').fill(KEY);page.locator('#driveConnect').click();page.wait_for_function("document.body.classList.contains('driveConnected')");page.wait_for_selector('#munRegistry',state='attached');page.evaluate("switchSection('anagrafica')");return page
             def check_ui(page,mobile=False):
                 assert page.locator('#munManageAreas,#contextStatistics,#contextDialog,#munBulkPark,#registryParkFilter,#munParkFilterTrigger').count()==0
                 assert page.evaluate('typeof municipalParks')=='undefined'
@@ -53,7 +54,7 @@ def main():
                     assert page.locator('#munPark').count()==0 and page.locator('#munGPS').is_visible();assert page.locator('#munName').get_attribute('placeholder')=='Es. ingresso nord'
                     if kind=='bin':page.screenshot(path='/tmp/lesmo-fixed-context-'+('mobile' if mobile else 'pc')+'.png',full_page=True)
                     page.locator('[data-mun-close]').click()
-                page.locator('#adminOpen').click();page.locator('#adminPassword').fill('Albereto71');page.locator('#adminLoginButton').click();assert page.locator('#adminContexts').count()==0
+                page.locator('#adminOpen').click();page.locator('#adminPassword').fill(ADMIN_TEST);page.locator('#adminLoginButton').click();assert page.locator('#adminContexts').count()==0
                 assert 'Gestisci contesti' not in page.locator('#adminContent').inner_text() and 'parchi' not in page.locator('#adminContent').inner_text().lower();page.locator('#adminClose').click()
                 page.evaluate("switchSection('mappa')");page.locator('#munLayersButton').click();assert page.locator('[data-layer=park]').count()==0;page.locator('#munLayersClose').click();page.evaluate("switchSection('anagrafica')")
             page=new_page();check_ui(page);assert archive()==original and not writes

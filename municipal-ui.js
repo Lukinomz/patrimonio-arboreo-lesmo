@@ -9,6 +9,9 @@
   const priorities={normal:'Ordinaria',high:'Alta',urgent:'Urgente'};
   const state={sort:'code',direction:1,selected:new Set(),page:0,taskFilter:'active'};
   let columnFilters;
+  const sectionCategories={anagrafica:'trees',censimento:'trees',statistiche:'all',mappa:'trees'};
+  window.setMunicipalSectionCategory=(section,category)=>{if(!Object.hasOwn(categories,category))return;sectionCategories[section]=category;if(currentSection===section)Municipal.categoryFilter=category;};
+  window.prepareMunicipalSection=section=>{Municipal.categoryFilter=sectionCategories[section]||'trees';};
   let dialog,returnFocus,photoUrls=[],photoToken=0,mapPickCancel=null,treePositionMeta=null;
   const label=(key,text,input,wide=false)=>`<label class="${wide?'munWide':''}" for="${key}"><span>${text}</span>${input}</label>`;
   const input=(id,value='',attrs='')=>`<input id="${id}" value="${html(value)}" ${attrs}/>`;
@@ -38,7 +41,7 @@
   }
   function setCategory(value){
     if(!Object.hasOwn(categories,value))return;
-    Municipal.categoryFilter=value;state.page=0;state.selected.clear();
+    sectionCategories[currentSection]=value;Municipal.categoryFilter=value;state.page=0;state.selected.clear();
     $('overviewStatus').value='all';window.resetRegistryFilters?.({preserveContext:true});columnFilters?.reset({preserveContext:true});
     document.body.classList.toggle('municipalOther',value!=='trees');
     document.querySelectorAll('[data-mun-category]').forEach(b=>{const active=b.dataset.munCategory===value;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active);});
@@ -218,6 +221,9 @@
     $('munTaskForm').onsubmit=e=>{e.preventDefault();action($('munTaskSave'),async()=>{
       const title=$('munTaskTitle').value.trim();if(!title)throw Error('Descrivi l’intervento.');const due=$('munTaskDue').value||null,priority=$('munTaskPriority').value,assignee=$('munTaskAssignee').value.trim(),description=$('munTaskDescription').value.trim(),files=[...($('munTaskBefore')?.files||[])];
       await municipalTransaction(async({workOrders})=>{for(const recordId of ids){const order={id:'WORK-'+uniqueID(),recordId,recordCode:municipalRecord(recordId).code,recordName:municipalName(municipalRecord(recordId)),title,due,priority,assignee,description,status:due?'planned':'open',created:new Date().toISOString(),updates:[]};await municipalUpload(files,recordId,'before',order.id);workOrders.push(order);municipalEvent(recordId,'intervento_pianificato',title,order);}});
+      const targetCategories=[...new Set(ids.map(id=>Municipal.category(municipalRecord(id))))];
+      setMunicipalSectionCategory('censimento',targetCategories.length===1&&Object.hasOwn(categories,targetCategories[0])?targetCategories[0]:'all');
+      state.taskFilter='active';document.querySelectorAll('[data-task-filter]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.taskFilter==='active')));
       close();tell(`${ids.length} ${ids.length===1?'intervento creato':'interventi creati'}`);switchSection('censimento');$('munTasks').scrollIntoView({block:'start'});
     });};
   }
@@ -246,11 +252,28 @@
   }
   function setupMap(){
     const stage=$('map').closest('.stage');
-    stage.insertAdjacentHTML('beforeend',`<button type="button" class="btn" id="munLayersButton" aria-expanded="false" aria-controls="munLayers">▱ Livelli</button><section id="munLayers" class="munLayers" hidden aria-label="Livelli della mappa"><header><strong>Mostra sulla mappa</strong><button type="button" id="munLayersClose" aria-label="Chiudi livelli">×</button></header><div class="munLayerChoices">${[['trees','Alberi'],...Object.entries(Municipal.kinds).filter(([key])=>key!=='park')].map(([key,name])=>`<label><input type="checkbox" data-layer="${key}" checked/><span>${html(name)}</span><small data-layer-count="${key}"></small></label>`).join('')}</div><details id="munHealthFilters"><summary>Stato degli alberi</summary><div id="munHealthSlot"></div></details></section><div id="munPointTools" hidden><strong>Scegli il punto esatto sulla mappa</strong><button type="button" class="btn" id="munPointCancel">Annulla</button></div><button class="btn main" type="button" id="munMapNew">＋ Elemento</button>`);
+    const toolbar=document.createElement('div');toolbar.id='mapWorkspaceToolbar';toolbar.className='mapWorkspaceToolbar';toolbar.setAttribute('aria-label','Strumenti della mappa');
+    toolbar.innerHTML='<span class="mapToolbarTitle">Mappa</span><span id="munLayerSummary" role="status"></span><div class="munActions"><button type="button" class="btn" id="munLayersButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="munLayers">▱ Livelli</button><button class="btn main" type="button" id="munMapNew">＋ Nuovo elemento</button></div>';
+    document.querySelector('.mainNav').insertAdjacentElement('afterend',toolbar);
+    const layers=document.createElement('dialog');layers.id='munLayers';layers.className='munLayers';layers.hidden=true;layers.setAttribute('aria-labelledby','munLayersTitle');
+    const layerRow=(key,name)=>`<label class="munLayerChoice"><input type="checkbox" data-layer="${key}" checked/><span>${name}</span><small data-layer-count="${key}"></small></label>`;
+    layers.innerHTML=`<header><h2 id="munLayersTitle">Livelli della mappa</h2><button type="button" id="munLayersClose" aria-label="Chiudi livelli">×</button></header><div class="munLayersBody"><div class="munLayerBulk"><label><input type="checkbox" id="munLayersAll" checked/> Seleziona tutto</label><button type="button" class="btn" id="munLayersTreesOnly">Solo alberi</button></div><p class="munLayerCountLabel">Posizionati sulla mappa / censiti</p><div class="munLayerChoices"><fieldset><legend>Patrimonio arboreo</legend>${layerRow('trees','Alberi, gruppi e fasce boschive')}</fieldset><fieldset><legend>Arredo urbano</legend>${layerRow('bench','Panchine')+layerRow('bin','Cestini')}</fieldset><fieldset><legend>Aree giochi</legend>${layerRow('playground_area','Aree giochi')+layerRow('equipment','Giochi')}</fieldset></div><details id="munHealthFilters"><summary>Condizione degli alberi</summary><div id="munHealthSlot"></div></details></div>`;
+    document.body.appendChild(layers);
+    stage.insertAdjacentHTML('beforeend','<div id="munPointTools" hidden><strong>Scegli il punto esatto sulla mappa</strong><button type="button" class="btn" id="munPointCancel">Annulla</button></div>');
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.id='municipalAreas';$('map').appendChild(svg);
     const pins=document.createElement('div');pins.id='municipalPins';$('map').appendChild(pins);
     const accuracy=document.createElement('div');accuracy.id='munAccuracyCircle';accuracy.hidden=true;$('map').appendChild(accuracy);
-    const toggle=open=>{$('munLayers').hidden=!open;$('munLayersButton').setAttribute('aria-expanded',open);};
+    const toggle=open=>{
+      $('munLayersButton').setAttribute('aria-expanded',String(open));
+      if(open){layers.hidden=false;if(!layers.open)layers.showModal();}
+      else{if(layers.open)layers.close();layers.hidden=true;}
+    };
+    window.closeMapLayers=()=>toggle(false);
+    layers.addEventListener('cancel',event=>{event.preventDefault();toggle(false);});
+    layers.addEventListener('close',()=>{$('munLayersButton').setAttribute('aria-expanded','false');layers.hidden=true;});
+    const applyLayers=predicate=>{for(const input of layers.querySelectorAll('[data-layer]'))Municipal.layers[input.dataset.layer]=predicate(input.dataset.layer);if(!Municipal.layers.trees)hideTreeCard();drawPins();};
+    $('munLayersAll').onchange=event=>applyLayers(()=>event.target.checked);
+    $('munLayersTreesOnly').onclick=()=>applyLayers(key=>key==='trees');
     $('munLayersButton').onclick=()=>toggle($('munLayers').hidden);$('munLayersClose').onclick=()=>toggle(false);
     const health=$('mapStatusFilters');$('munHealthSlot').appendChild(health);health.querySelector('details').open=true;
     $('munPointCancel').onclick=()=>mapPickCancel?.();$('munMapNew').onclick=()=>{const current=Municipal.categoryFilter;if(current==='trees')Municipal.categoryFilter='all';showMunicipalChoice();Municipal.categoryFilter=current;};
@@ -273,6 +296,9 @@
     }
     pins.appendChild(fragment);svg.innerHTML=areas.join('');
     for(const [key,name] of [['trees','Alberi'],...Object.entries(Municipal.kinds).filter(([key])=>key!=='park')]){const records=key==='trees'?trees:Municipal.assets.filter(a=>a.assetKind===key),count=$('munLayers').querySelector(`[data-layer-count="${key}"]`);if(count)count.textContent=`${records.filter(isValid).length} / ${records.length}`;const check=$('munLayers').querySelector(`[data-layer="${key}"]`);if(check)check.checked=Municipal.layers[key];}
+    const layerKeys=['trees','bench','bin','playground_area','equipment'],selected=layerKeys.filter(key=>Municipal.layers[key]).length;
+    $('munLayersAll').checked=selected===layerKeys.length;$('munLayersAll').indeterminate=selected>0&&selected<layerKeys.length;
+    $('munLayerSummary').textContent=selected?`${selected} di ${layerKeys.length} livelli visibili`:'Nessun livello selezionato';
     const circle=$('munAccuracyCircle');if(typeof mGpsPoint!=='undefined'&&mGpsPoint&&isValid(mGpsPoint)&&mGpsPoint.accuracy>0){const point=mapFromLL(mGpsPoint.lat,mGpsPoint.lon),metersPerPixel=156543.03392*Math.cos(mGpsPoint.lat*Math.PI/180)/2**mp.z,radius=Math.min(2500,mGpsPoint.accuracy/metersPerPixel);circle.hidden=false;circle.style.cssText=`left:${point.x}px;top:${point.y}px;width:${radius*2}px;height:${radius*2}px`;}else circle.hidden=true;
   };
   window.acquireMunicipalGPS=function(){
@@ -360,12 +386,12 @@
     if(!$('municipalCategories'))return;
     const category=Municipal.categoryFilter,other=category!=='trees';
     document.body.classList.toggle('municipalOther',other);
-    const section=document.querySelector('.mainNav .active')?.dataset.view||'anagrafica';
+    const section=currentSection||'anagrafica';
     $('municipalCategories').hidden=!['anagrafica','riepilogo','censimento','statistiche'].includes(section);
-    if(other){$('workTitle').textContent=section==='censimento'?'Rilevazioni':section==='statistiche'?'Statistiche':'Anagrafica';$('workSubtitle').textContent=categories[category]||'Patrimonio comunale';}
-    for(const id of ['manualHeader','mAddNewTree'])if($(id))$(id).textContent=other?'＋ Nuovo elemento':'＋ Nuovo albero';
+    document.querySelectorAll('[data-mun-category]').forEach(button=>{const active=button.dataset.munCategory===category;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
+    for(const id of ['manualHeader','mAddNewTree'])if($(id))$(id).textContent=other&&['anagrafica','censimento'].includes(section)?'＋ Nuovo elemento':'＋ Nuovo albero';
     renderCommon();renderTasks();if(other)renderStats();drawMunicipalMap();
-    const target=new URL(location.href).searchParams.get('record');if(target&&!document.body.classList.contains('driveLoginRequired')&&folderHandle&&municipalRecord(target)&&dialog&&!dialog.open){const url=new URL(location.href);url.searchParams.delete('record');history.replaceState(null,'',url);setTimeout(()=>{const category=Municipal.category(municipalRecord(target));setCategory(Object.hasOwn(categories,category)?category:'all');openRecord(target);},0);}
+    const target=new URL(location.href).searchParams.get('record');if(target&&!document.body.classList.contains('driveLoginRequired')&&folderHandle&&municipalRecord(target)&&dialog&&!dialog.open){const url=new URL(location.href);url.searchParams.delete('record');history.replaceState(null,'',url);setTimeout(()=>{const category=Municipal.category(municipalRecord(target));setMunicipalSectionCategory('anagrafica',Object.hasOwn(categories,category)?category:'all');switchSection('anagrafica');openRecord(target);},0);}
   };
   document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
     dialog=document.createElement('dialog');dialog.id='municipalDialog';dialog.className='munDialog';dialog.setAttribute('aria-labelledby','munTitle');dialog.addEventListener('cancel',e=>{e.preventDefault();close();});document.body.appendChild(dialog);
@@ -379,12 +405,12 @@
       const actions=$('mHomeActions');if(actions)legacy.querySelector('.sectionHead').after(actions);
     }
     const stats=document.createElement('section');stats.id='munStatistics';$('viewStatistiche').appendChild(stats);
-    const selectCensus=v2SelectCensus;v2SelectCensus=function(...args){window.municipalSurveyReference=null;return selectCensus(...args);};
+    const selectCensus=v2SelectCensus;v2SelectCensus=function(...args){window.municipalSurveyReference=null;setMunicipalSectionCategory('censimento','trees');const result=selectCensus(...args);renderMunicipalUI();return result;};
     const drawHistory=v2DrawSurveyList;v2DrawSurveyList=function(...args){const result=drawHistory(...args);if(v2SelectedId&&$('v2CensusHistory')){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Consulta e riutilizza i rilievi precedenti';button.onclick=()=>showTreeReferences(municipalRecord(v2SelectedId));$('v2CensusHistory').prepend(button);}return result;};
     const previousRender=renderDashboard;renderDashboard=function(...args){const result=previousRender(...args);renderMunicipalUI();return result;};
     const previousSwitch=switchSection;switchSection=function(...args){if(mapPickCancel&&args[0]!=='mappa')mapPickCancel();const result=previousSwitch(...args);renderMunicipalUI();return result;};
     const geoExport=expGeo;expGeo=function(){if(!Municipal.assets.length)return geoExport();const features=allMunicipalRecords().filter(r=>isValid(r)||r.geometry).map(r=>({type:'Feature',geometry:r.geometry||{type:'Point',coordinates:[+r.lon,+r.lat]},properties:{...r,geometry:undefined}}));fileDownload('patrimonio_lesmo.geojson',JSON.stringify({type:'FeatureCollection',features},null,2),'application/geo+json');};
-    const guide=document.createElement('section');guide.className='guideArticle';guide.id='guida-patrimonio';guide.innerHTML='<h3>Arredi, aree giochi e manutenzione</h3><p>In Anagrafica scegli <strong>Arredo urbano</strong> o <strong>Aree giochi</strong>, poi <strong>Nuovo elemento</strong>. Il tipo scelto apre i campi pertinenti. Indica il luogo nel campo <strong>Via/Località/Parco</strong>. Per il <strong>Contesto</strong> scegli Nessun contesto, Stradale, Parco o area verde oppure Altro.</p><p>Sulla mappa apri <strong>Livelli</strong> e scegli cosa visualizzare. Per la posizione usa <strong>Rileva GPS</strong>, controlla l’accuratezza in metri e, se serve, <strong>Scegli sulla mappa</strong>.</p><p>Ogni scheda conserva le rilevazioni precedenti. Puoi usarne una come riferimento per una nuova visita. Un rilievo con data precedente resta nello storico senza cambiare lo stato attuale. Da <strong>Rilevazioni → Interventi e manutenzione</strong> assegna un lavoro, indica una scadenza e aggiornalo fino al completamento, con esito e foto.</p><p>La vista <strong>Tutti</strong> permette selezioni multiple per assegnare un contesto, creare interventi e stampare etichette QR. <strong>Inserisci simile</strong> ripropone i campi descrittivi e il contesto; il nuovo elemento riceve un codice e una posizione propri.</p>';$('viewGuida').querySelector('.guideArticles').appendChild(guide);
-    renderMunicipalUI();
+    const guide=document.createElement('section');guide.className='guideArticle';guide.id='guida-patrimonio';guide.innerHTML='<h3>Arredi, aree giochi e manutenzione</h3><p>In Anagrafica scegli <strong>Arredo urbano</strong> o <strong>Aree giochi</strong>, poi <strong>Nuovo elemento</strong>. Il tipo scelto apre i campi pertinenti. Indica il luogo nel campo <strong>Via/Località/Parco</strong>. Per il <strong>Contesto</strong> scegli Nessun contesto, Stradale, Parco o area verde oppure Altro.</p><p>Sulla mappa apri <strong>Livelli</strong> e scegli cosa visualizzare. Per la posizione usa <strong>Rileva GPS</strong>, controlla l’accuratezza in metri e, se serve, <strong>Scegli sulla mappa</strong>.</p><p>Ogni scheda conserva le rilevazioni precedenti. Puoi usarne una come riferimento per una nuova visita. Un rilievo con data precedente resta nello storico senza cambiare lo stato attuale. Da <strong>Censimento e Monitoraggio → Interventi e manutenzione</strong> assegna un lavoro, indica una scadenza e aggiornalo fino al completamento, con esito e foto.</p><p>La vista <strong>Tutti</strong> permette selezioni multiple per assegnare un contesto, creare interventi e stampare etichette QR. <strong>Inserisci simile</strong> ripropone i campi descrittivi e il contesto; il nuovo elemento riceve un codice e una posizione propri.</p>';$('viewGuida').querySelector('.guideArticles').appendChild(guide);
+    prepareMunicipalSection(currentSection);renderMunicipalUI();
   },0));
 })();

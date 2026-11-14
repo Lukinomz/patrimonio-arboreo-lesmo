@@ -267,10 +267,12 @@
   function openApplication() {
     const gate = byId('driveAccess');
     if (!gate || gate.hidden) return;
-    byId('viewArchivio').prepend(byId('driveCard'));
+    byId('v2ArchiveTab').closest('.v2ArchNav').insertAdjacentElement('afterend',byId('driveCard'));
+    byId('driveAccessTitle').textContent='Archivio condiviso';
     gate.hidden = true;
     byId('app').inert = false;
     document.body.classList.remove('driveLoginRequired');
+    switchSection('statistiche');
   }
 
   async function refreshDatabase({silent = false} = {}) {
@@ -415,7 +417,7 @@
     byId('driveGenerate').onclick = generateKey;
     byId('driveShare').onclick = shareConnection;
     byId('driveURL').value = DEFAULT_DRIVE_URL;
-    byId('driveLocal').onclick = async () => { await Promise.all(bootTasks); openApplication(); switchSection('archivio'); };
+    byId('driveLocal').onclick = async () => { await Promise.all(bootTasks); openApplication(); };
     const leave = () => {
       if (busy) return;
       if (!confirm('Uscire e tornare alla richiesta della password? Le modifiche non salvate andranno perse. Scarica prima una copia da recuperare se necessario.')) return;
@@ -433,11 +435,11 @@
       byId('driveKey').value = incomingConnection.key;
       incomingConnection = null;
       connect({preventDefault() {}}).then(connected => {
-        if (!connected) switchSection('archivio');
+        if (!connected) byId('driveKey').focus();
       });
     } else if (incomingError) {
       byId('driveFeedback').textContent = incomingError;
-      switchSection('archivio');
+      byId('driveKey').focus();
     }
   });
 })();

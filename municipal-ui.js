@@ -170,7 +170,7 @@
     $('munSelectPage').checked=page.length>0&&page.every(row=>state.selected.has(row.record.id));$('munSelectPage').indeterminate=page.some(row=>state.selected.has(row.record.id))&&!$('munSelectPage').checked;
     $('munSelectPage').onchange=e=>{page.forEach(row=>e.target.checked?state.selected.add(row.record.id):state.selected.delete(row.record.id));renderCommon();};
     $('munBulkCount').textContent=`${state.selected.size} selezionati`;$('munBulkActions').hidden=!state.selected.size;
-    $('munPageInfo').textContent=`Pagina ${state.page+1} di ${max}`;$('munPrev').disabled=!state.page;$('munNext').disabled=state.page+1>=max;
+    $('munPageInfo').textContent=`${rows.length} elementi · Pagina ${state.page+1} di ${max}`;$('munPrev').disabled=!state.page;$('munNext').disabled=state.page+1>=max;
     $('munExport').disabled=!rows.length;columnFilters?.headers($('munRegistry').querySelector('table'),'data-mun-sort');columnFilters?.chips($('munFilterChips'));
   }
   function setupRegistry(){
@@ -179,7 +179,6 @@
     columns.area={label:'Contesto',context:true,value:row=>municipalContextId(row.record),format:municipalAreaName};columns.gps.format=value=>value==='1'?'Con GPS':'Senza GPS';
     columnFilters=RegistryFilters.create({id:'municipal',columns,getRows:commonRows,baseMatch:commonBaseMatch,onChange:()=>{state.page=0;renderDashboard();}});
     for(const [id,key,allLabel] of [['munKindFilter','kind','Tutti i tipi'],['munConditionFilter','condition','Tutte le condizioni'],['munAreaFilter','area','Tutti i contesti']]){const select=$(id),button=document.createElement('button');button.id=id+'Trigger';select.hidden=true;select.insertAdjacentElement('afterend',button);columnFilters.quickButton(button,key,allLabel);}
-    if(mMobile){const filters=$('munRegistry').querySelector('.munFilters'),details=document.createElement('details');details.className='munMobileFilters';details.innerHTML='<summary>Filtri</summary><div></div>';const content=details.querySelector('div');[...filters.children].filter(child=>!child.classList.contains('munSearchLabel')).forEach(child=>content.appendChild(child));filters.appendChild(details);}
     $('munCommonSort').onchange=e=>{state.sort=e.target.value;state.direction=1;renderCommon();};$('munCommonDirection').onclick=()=>{state.direction*=-1;renderCommon();};$('munCommonColumns').onchange=e=>{if(e.target.checked)commonVisible.add(e.target.value);else commonVisible.delete(e.target.value);renderCommon();};
     $('munNew').onclick=showMunicipalChoice;$('munPrev').onclick=()=>{state.page--;renderCommon();};$('munNext').onclick=()=>{state.page++;renderCommon();};
     for(const id of ['munSearch','munKindFilter','munConditionFilter','munGPSFilter','munAreaFilter'])$(id).addEventListener(id==='munSearch'?'input':'change',()=>{state.page=0;renderCommon();});
@@ -242,6 +241,24 @@
     const records=categoryRecords();show(mode==='task'?'Scegli l’elemento per l’intervento':'Seleziona l’elemento da rilevare',`<label class="munSearchLabel">Cerca codice, nome o via<input type="search" id="munPickerSearch" placeholder="Cerca nell’archivio…"/></label><div id="munPickerResults" class="munPicker"></div>`);
     const render=()=>{const tokens=normalize($('munPickerSearch').value).split(/\s+/).filter(Boolean),hits=records.filter(r=>tokens.every(t=>normalize([r.code,municipalName(r),r.address].join(' ')).includes(t)));$('munPickerResults').innerHTML=hits.slice(0,100).map(r=>`<button type="button" data-pick-record="${html(r.id)}"><span><strong>${html(r.code||r.id)} · ${html(municipalName(r))}</strong><small>${html(r.address||municipalAreaName(r.areaId))}</small></span>${statusBadge(r)}</button>`).join('')+(hits.length>100?'<p>Affina la ricerca per vedere gli altri risultati.</p>':'')||'<p>Nessun elemento trovato.</p>';dialog.querySelectorAll('[data-pick-record]').forEach(b=>b.onclick=()=>{const r=municipalRecord(b.dataset.pickRecord);if(mode==='task')openTaskForm([r.id]);else if(r.assetKind)openAssetInspection(r);else{close();setCategory('trees');switchSection('censimento');v2SelectCensus(r.id);}});};
     $('munPickerSearch').oninput=render;render();$('munPickerSearch').focus();
+  }
+  function setupCompactRegistry(){
+    const registry=document.querySelector('.v21Registry'),header=registry.querySelector('.sectionHead'),search=registry.querySelector('.registrySearchRow');
+    header.querySelector('h2').remove();header.firstElementChild.className='registrySrOnly';
+    search.querySelector('.registryFieldLabel').classList.add('registrySrOnly');header.prepend(search);
+    const actions=document.createElement('div');actions.className='registryToolbarActions';
+    if($('mHomeActions'))actions.appendChild($('mHomeActions'));
+    $('downloadTable').textContent='↓ Esporta';$('downloadTable').setAttribute('aria-label','Esporta risultati CSV');actions.appendChild($('downloadTable'));header.appendChild(actions);
+    const filters=document.createElement('details');filters.id='mobileRegistryFilters';filters.className='munMobileFilters registryFilterDisclosure';filters.innerHTML='<summary>Filtri</summary><div class="registryFilterContent"></div>';
+    filters.querySelector('div').append(registry.querySelector('.registryFilters'),registry.querySelector('.registryMobileSort'));
+    registry.querySelector('.registryOrderRow').prepend(filters);$('registryOrder').className='registrySrOnly';
+    const common=$('munRegistry'),commonHeader=common.querySelector('.sectionHead'),commonFilters=common.querySelector('.munFilters'),commonSearch=commonFilters.querySelector('.munSearchLabel');
+    commonHeader.querySelector('h2').remove();commonHeader.firstElementChild.className='registrySrOnly';commonSearch.querySelector('span').classList.add('registrySrOnly');commonHeader.prepend(commonSearch);
+    const commonActions=commonHeader.querySelector('.munActions');commonActions.classList.add('registryToolbarActions');commonActions.prepend($('munNew'));$('munExport').textContent='↓ Esporta';$('munExport').setAttribute('aria-label','Esporta risultati CSV');
+    const commonDisclosure=document.createElement('details');commonDisclosure.id='munRegistryFilters';commonDisclosure.className='munMobileFilters registryFilterDisclosure';commonDisclosure.innerHTML='<summary>Filtri</summary><div class="registryFilterContent"></div>';
+    const tools=common.querySelector('.munTableTools'),sort=document.createElement('div');sort.className='registrySortOptions';sort.append($('munCommonSort').closest('label'),$('munCommonDirection'));
+    commonDisclosure.querySelector('div').append(commonFilters,sort,$('munRegistryBreakdown'));tools.prepend(commonDisclosure);
+    $('driveRegistrySync').classList.add('registrySrOnly');
   }
   function setupInspections(){
     $('viewCensimento').insertAdjacentHTML('afterbegin',`<section class="workCard" id="munInspectionStart"><div class="sectionHead"><div><h2>Nuova rilevazione</h2><p>Seleziona una scheda per consultare i rilievi precedenti e registrare la visita.</p></div><button class="btn main" id="munInspectionPick">Seleziona elemento</button></div></section>`);
@@ -390,6 +407,8 @@
     $('municipalCategories').hidden=!['anagrafica','riepilogo','censimento','statistiche'].includes(section);
     document.querySelectorAll('[data-mun-category]').forEach(button=>{const active=button.dataset.munCategory===category;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     for(const id of ['manualHeader','mAddNewTree'])if($(id))$(id).textContent=other&&['anagrafica','censimento'].includes(section)?'＋ Nuovo elemento':'＋ Nuovo albero';
+    const refresh=$('driveRefreshRegistry'),actions=document.querySelector(other?'#munRegistry .registryToolbarActions':'.v21Registry .registryToolbarActions');
+    if(refresh&&actions&&refresh.parentElement!==actions)actions.insertBefore(refresh,$(other?'munExport':'downloadTable'));
     renderCommon();renderTasks();if(other)renderStats();drawMunicipalMap();
     const target=new URL(location.href).searchParams.get('record');if(target&&!document.body.classList.contains('driveLoginRequired')&&folderHandle&&municipalRecord(target)&&dialog&&!dialog.open){const url=new URL(location.href);url.searchParams.delete('record');history.replaceState(null,'',url);setTimeout(()=>{const category=Municipal.category(municipalRecord(target));setMunicipalSectionCategory('anagrafica',Object.hasOwn(categories,category)?category:'all');switchSection('anagrafica');openRecord(target);},0);}
   };
@@ -400,10 +419,7 @@
     document.querySelectorAll('[data-mun-category]').forEach(b=>b.onclick=()=>setCategory(b.dataset.munCategory));
     Object.assign(typeLabel,{asset_rilievo:'Rilevazione',asset_anagrafica:'Aggiornamento scheda',assegnazione_area:'Assegnazione contesto',intervento_pianificato:'Intervento pianificato',intervento_aggiornato:'Intervento aggiornato',intervento_completato:'Intervento completato'});
     setupRegistry();setupInspections();setupMap();setupTreeExtensions();
-    if(mMobile){
-      const legacy=document.querySelector('.v21Registry'),filters=legacy.querySelector('.registryFilters'),details=document.createElement('details');details.id='mobileRegistryFilters';details.className='munMobileFilters';details.innerHTML='<summary>Filtri</summary>';filters.before(details);details.appendChild(filters);
-      const actions=$('mHomeActions');if(actions)legacy.querySelector('.sectionHead').after(actions);
-    }
+    setupCompactRegistry();
     const stats=document.createElement('section');stats.id='munStatistics';$('viewStatistiche').appendChild(stats);
     const selectCensus=v2SelectCensus;v2SelectCensus=function(...args){window.municipalSurveyReference=null;setMunicipalSectionCategory('censimento','trees');const result=selectCensus(...args);renderMunicipalUI();return result;};
     const drawHistory=v2DrawSurveyList;v2DrawSurveyList=function(...args){const result=drawHistory(...args);if(v2SelectedId&&$('v2CensusHistory')){const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Consulta e riutilizza i rilievi precedenti';button.onclick=()=>showTreeReferences(municipalRecord(v2SelectedId));$('v2CensusHistory').prepend(button);}return result;};

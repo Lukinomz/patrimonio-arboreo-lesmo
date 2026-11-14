@@ -1,7 +1,7 @@
 """Quattro contesti fissi e rimozione gestione parchi. Drive simulato, 91 schede e storico intatti."""
 import copy,csv,functools,http.server,json,pathlib,re,subprocess,threading,urllib.request
 from playwright.sync_api import sync_playwright
-from browser_support import ADMIN_TEST, mock_admin_login
+from browser_support import ADMIN_TEST, mock_admin_login, open_registry_filters
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 KEY='test-only-key-not-for-production-0123456789'
 ENDPOINT=re.search(r"const DEFAULT_DRIVE_URL = '([^']+)'",(ROOT/'drive-storage.js').read_text()).group(1)
@@ -59,6 +59,7 @@ def main():
                 page.evaluate("switchSection('mappa')");page.locator('#munLayersButton').click();assert page.locator('[data-layer=park]').count()==0;page.locator('#munLayersClose').click();page.evaluate("switchSection('anagrafica')")
             page=new_page();check_ui(page);assert archive()==original and not writes
             # Taxonomy filters and exports still operate on complete results, including old stored IDs.
+            open_registry_filters(page)
             page.locator('#registryContextFilter').click();page.locator('#columnFilterPopup .cfChoices label').filter(has=page.get_by_text('Parco o area verde',exact=True)).locator('input').check();page.locator('[data-cf-apply]').click()
             expected=sum(page.evaluate('(t)=>municipalContextKey(t)',tree)=='parco' for tree in trees)
             assert page.locator('#overviewRows [data-tree]').count()==expected

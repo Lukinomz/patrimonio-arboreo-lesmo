@@ -29,3 +29,9 @@ def open_archive(page, photos=False):
         page.locator('#adminLoginButton').click()
     page.locator('#adminArchivePanel').wait_for(state='visible')
 
+
+def open_registry_filters(page):
+    selector = '#mobileRegistryFilters' if page.locator('.v21Registry').is_visible() else '#munRegistryFilters'
+    if not page.locator(selector).evaluate('e=>e.open'):
+        page.locator(selector + '>summary').click()
+

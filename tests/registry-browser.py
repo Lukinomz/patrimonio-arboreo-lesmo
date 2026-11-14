@@ -11,7 +11,7 @@ import threading
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from playwright.sync_api import sync_playwright
-from browser_support import mock_admin_login
+from browser_support import mock_admin_login, open_registry_filters
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 KEY = 'test-only-key-not-for-production-0123456789'
@@ -120,6 +120,7 @@ def main():
             print('PASS: tutte le 9 colonne, entrambe le direzioni, numeri naturali, dati mancanti in fondo, tastiera e pagine', flush=True)
 
             # Filtri combinati, ricerca senza distinzione di accenti e selezioni multiple.
+            open_registry_filters(page)
             page.locator('#overviewStatus').evaluate("e=>{e.value='ok';e.dispatchEvent(new Event('change',{bubbles:true}))}")
             page.locator('#overviewLocation').select_option('nogeo')
             page.locator('#v21PhotoFilter').select_option('without')
@@ -258,6 +259,7 @@ def main():
 
             for width in [320, 390]:
                 mobile = new_page(True, width)
+                open_registry_filters(mobile)
                 mobile.locator('#v21Sort').select_option('photos')
                 assert mobile.locator('#overviewRows [data-tree]').count() == 50
                 assert mobile.locator('#overviewRows [data-tree]').first.inner_text() == 'LESMO-A0010'
@@ -265,7 +267,7 @@ def main():
                 assert mobile.locator('#overviewRows [data-tree]').first.inner_text() == 'LESMO-A0011'
                 mobile.locator('#overviewSearch').fill('LESMO-A0001')
                 assert mobile.locator('#overviewRows [data-tree]').count() == 1
-                mobile.locator('#mobileRegistryFilters > summary').click()
+                open_registry_filters(mobile)
                 facet = mobile.locator('[data-registry-facet="species"]'); facet.locator('summary').click()
                 rect = facet.locator('.registryFacetPanel').bounding_box(); assert rect['x'] >= 0 and rect['x'] + rect['width'] <= width
                 mobile.screenshot(path=str(ARTIFACTS / f'registry-mobile-{width}.png'), full_page=False)

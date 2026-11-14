@@ -129,7 +129,7 @@
     for (const id of ['driveReload', 'driveRefreshRegistry']) {
       if (byId(id)) {
         byId(id).disabled = !active || !!busy || refreshing;
-        byId(id).textContent = refreshing ? 'Aggiornamento…' : '↻ Aggiorna database';
+        byId(id).textContent = refreshing ? 'Aggiornamento…' : id === 'driveRefreshRegistry' ? '↻ Aggiorna' : '↻ Aggiorna database';
       }
     }
     for (const id of ['driveURL', 'driveKey', 'driveCreate']) byId(id).disabled = connecting || !!active;
@@ -302,12 +302,16 @@
         refresh(); updateArchiveUI();
         const message = 'DB aggiornato · ' + trees.length + ' alberi · ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'});
         byId('driveRefreshStatus').textContent = message;
+        byId('driveRegistrySync').classList.add('registrySrOnly');
+        byId('driveRegistrySync').classList.remove('registrySyncError');
         byId('driveFeedback').textContent = message;
         if (!silent) tell('DB aggiornato da Google Drive.');
         return true;
       } catch (error) {
         const message = 'Aggiornamento non riuscito: ' + error.message + ' I dati già caricati sono mantenuti.';
         byId('driveRefreshStatus').textContent = message;
+        byId('driveRegistrySync').classList.remove('registrySrOnly');
+        byId('driveRegistrySync').classList.add('registrySyncError');
         byId('driveFeedback').textContent = message;
         tell('Aggiornamento non riuscito. Puoi riprovare senza uscire.');
         return false;
@@ -404,7 +408,7 @@
     byId('workFolderReminder').insertAdjacentElement('afterend', open);
     const refreshButton = document.createElement('button');
     refreshButton.id = 'driveRefreshRegistry'; refreshButton.type = 'button'; refreshButton.className = 'btn';
-    refreshButton.textContent = '↻ Aggiorna database'; refreshButton.disabled = true;
+    refreshButton.textContent = '↻ Aggiorna'; refreshButton.title = 'Aggiorna database'; refreshButton.setAttribute('aria-label','Aggiorna database'); refreshButton.disabled = true;
     refreshButton.onclick = refreshDatabase;
     const registrySync = document.createElement('div');
     registrySync.id = 'driveRegistrySync';

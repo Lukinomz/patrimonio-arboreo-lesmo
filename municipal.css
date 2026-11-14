@@ -123,3 +123,46 @@ body.mobileMode .mapWorkspaceToolbar .btn{font-size:12px;padding:8px 10px}
 body.mobileMode .workspace>.workTop{background:none;padding:0 0 10px;border:0;border-radius:0}
 body.mobileMode .workspace>.workTop h1{font-size:22px;margin:0}
 @media(max-width:380px){body.mobileMode #munLayerSummary{max-width:64px}body.mobileMode .mapWorkspaceToolbar .btn{padding:8px;font-size:11px}}
+
+/* Anagrafica: ricerca, strumenti e tabella senza intestazioni ripetute. */
+.anagraficaOpen .workspace{padding-top:12px}
+.anagraficaOpen :is(#workFolderReminder,#mArchiveBanner,#openDrive){display:none!important}
+.anagraficaOpen #syncStatus:not(.error){display:none}
+.anagraficaOpen #syncStatus.error{display:inline-flex!important}
+.anagraficaOpen #municipalCategories{margin-bottom:8px}
+.anagraficaOpen :is(.v21Registry,#munRegistry){padding:12px;margin-top:0}
+.anagraficaOpen :is(.v21Registry,#munRegistry)>.sectionHead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.anagraficaOpen :is(.registrySearchRow,.munSearchLabel){flex:1;min-width:0;margin:0}
+.anagraficaOpen .registrySearchRow .registrySearch{gap:0}
+.anagraficaOpen :is(#overviewSearch,#munSearch){min-height:40px;padding:9px 10px;font-size:14px}
+.anagraficaOpen #munSearch{width:100%;border:1px solid #dce4d8;border-radius:8px;background:#f6f8f3;color:#294733}
+.anagraficaOpen .registryToolbarActions{display:flex;flex:0 0 auto;gap:6px;align-items:center;flex-wrap:wrap}
+.anagraficaOpen #viewRiepilogo .registryToolbarActions .btn{min-height:36px;min-width:0;padding:8px 10px;font-size:12px;margin:0;white-space:nowrap}
+.anagraficaOpen :is(.registryOrderRow,.munTableTools){display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin:0 0 8px;min-height:0}
+.anagraficaOpen :is(.registryColumns,.munColumnMenu){margin-left:auto}
+.anagraficaOpen .registryFilterDisclosure{margin:0!important;min-width:0}
+.anagraficaOpen .registryFilterDisclosure:not([open]){width:auto;flex:0 0 auto}
+.anagraficaOpen .registryFilterDisclosure>summary{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:7px 11px;border:1px solid #d6e0cf;border-radius:7px;background:#fffefb;color:#3d5f37;font-size:12px;cursor:pointer;list-style:none}
+.anagraficaOpen .registryFilterDisclosure>summary:after{content:'⌄'}
+.anagraficaOpen .registryFilterDisclosure>summary::-webkit-details-marker{display:none}
+.anagraficaOpen .registryFilterDisclosure[open]{flex-basis:100%;width:100%}
+.anagraficaOpen .registryFilterContent{display:block!important;padding:10px 0 0}
+.anagraficaOpen .registryFilterContent>.registryFilters{margin:0;padding:0!important}
+.anagraficaOpen .registryFilterContent>.munFilters{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.anagraficaOpen .registryFilterContent .munFilters>label{min-width:0}
+.anagraficaOpen .registrySortOptions{display:flex;gap:8px;align-items:center;margin-top:10px}
+.anagraficaOpen .registryFilterContent .registryMobileSort{margin-top:10px}
+.anagraficaOpen #munRegistryBreakdown{margin:8px 0 0}
+.anagraficaOpen #overviewTable td{padding:9px 12px;height:44px}
+.anagraficaOpen #overviewTable th button{min-height:44px;padding:10px 12px}
+.anagraficaOpen #munRegistry .munTable td{padding:10px 12px}
+.anagraficaOpen #driveRegistrySync.registrySyncError{padding:8px 10px;margin:0 0 8px;border:1px solid #e6c2b9;border-radius:8px;background:#fff3ed;color:#984732;font-size:12px}
+body.mobileMode.anagraficaOpen :is(.v21Registry,#munRegistry){padding:8px}
+body.mobileMode.anagraficaOpen :is(.v21Registry,#munRegistry)>.sectionHead{flex-direction:column;align-items:stretch}
+body.mobileMode.anagraficaOpen :is(#overviewSearch,#munSearch){font-size:16px;min-height:44px}
+body.mobileMode.anagraficaOpen .registryToolbarActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%}
+body.mobileMode.anagraficaOpen #munRegistry .registryToolbarActions{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.mobileMode.anagraficaOpen .registryToolbarActions>#mHomeActions{display:contents;margin:0}
+body.mobileMode.anagraficaOpen #viewRiepilogo .registryToolbarActions .btn{min-height:44px;padding:8px 7px;font-size:12px;white-space:normal}
+body.mobileMode.anagraficaOpen .registryFilterDisclosure>summary,body.mobileMode.anagraficaOpen :is(.registryColumns,.munColumnMenu)>summary{min-height:44px;display:inline-flex;align-items:center}
+@media(min-width:741px){body.mobileMode.anagraficaOpen .registryToolbarActions{grid-template-columns:repeat(4,minmax(0,1fr))}}

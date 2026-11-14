@@ -105,3 +105,11 @@ configurazioni, compreso il telefono in orizzontale. Il backup conserva
 dei livelli non scrivono nell’archivio. Le prove dell’area Admin sostituiscono
 soltanto nella risposta JavaScript locale il controllo di accesso con una
 password di prova, senza estrarre o utilizzare la password dell’app.
+
+L’Anagrafica usa una barra compatta con ricerca, Aggiorna ed Esporta. I dettagli
+di Drive sono consultabili in Admin; nel registro i conteggi compaiono una volta
+nel piè di tabella. I filtri aggiuntivi e l’ordinamento mobile si aprono con
+**Filtri**, mentre le intestazioni mantengono ordinamento e filtri per colonna.
+Gli errori di aggiornamento restano visibili. `tests/registry-layout-browser.py`
+controlla lo spazio prima della tabella e la presenza dei comandi su PC e telefoni
+da 320/390 px, per tutte le categorie, con dati fittizi e sole letture.

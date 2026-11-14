@@ -1222,7 +1222,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <script src="group-census.js?v=4"></script>
 <script src="municipal-data.js?v=3"></script>
 <script src="context-options.js?v=1"></script>
-<link rel="stylesheet" href="municipal.css?v=5"/>
+<link rel="stylesheet" href="municipal.css?v=6"/>
 </head><body>
 <div class="app fullMap dashboard" id="app">
 <header class="header"><div class="brand"><span class="logo">♣</span><div><div class="eyebrow">COMUNE DI LESMO <span class="v21Version">VERSIONE 2.0</span></div><div class="name">Patrimonio Arboreo</div></div></div><div class="headerActions"><span id="syncStatus" title="Stato archivio">● Archivio non collegato</span><select aria-label="Tipo di mappa" class="btn mapSelect" id="mapKind" title="Seleziona la vista della mappa"><option value="hybrid">🛰 Ibrida + vie</option><option value="sat">🛰 Solo satellite</option><option value="street">🗺 Stradale</option></select><button aria-controls="addTreeChoice" aria-haspopup="dialog" class="btn main" id="manualHeader" type="button">＋ Nuovo albero</button><button class="btn adminEntry" id="adminOpen" type="button" aria-haspopup="dialog">⚙ Admin</button><button aria-hidden="true" class="hidden" hidden="" id="addHeader" type="button"></button></div></header>
@@ -1260,7 +1260,7 @@ body.mobileMode #viewArchivio > .v2Muted{display:none!important}
 <section class="guideArticle" id="guida-domande" tabindex="-1"><h3>Dubbi frequenti</h3><details><summary>Dove sono backup e importazioni?</summary><p>Il responsabile li trova in <strong>Admin → Archivio e backup</strong>, insieme alle foto rapide e da associare.</p></details><details><summary>Devo reinserire la password ogni volta che aggiorno i dati?</summary><p>No. Usa il pulsante di aggiornamento dell’app. Se ricarichi la pagina del browser, chiudi l’app o scegli Esci, dovrai accedere di nuovo.</p></details><details><summary>Come esco da una scheda senza salvarla?</summary><p>Premi la X in alto oppure Annulla, se presente. I dati non ancora salvati verranno scartati; se ci sono foto in attesa, l’app può chiederti conferma.</p></details><details><summary>Non vedo un albero sulla mappa: è stato perso?</summary><p>Controlla prima l’elenco in Anagrafica / Alberi. Potrebbe non avere ancora una posizione oppure essere nascosto dai filtri della mappa.</p></details><details><summary>La specie o l’indirizzo sono sbagliati: dove li correggo?</summary><p>Apri la scheda dell’albero e scegli Anagrafica. Per registrare invece una nuova osservazione sulla salute o sulle misure usa Censimento e Monitoraggio.</p></details><details><summary>Non compare la conferma del salvataggio: cosa faccio?</summary><p>Attendi che l’operazione finisca e leggi l’eventuale messaggio. Se compare un errore, non considerare il lavoro salvato. Controlla la connessione e chiedi aiuto al responsabile se il problema continua.</p></details></section>
 </div></div></section>
 <div class="workView" id="viewRiepilogo">
-<div class="v2SectionActions"><div><h2>Registro anagrafico</h2></div><div class="v2ActionRow"><button class="btn" id="v2AnaSelectMap" type="button">⌖ Esplora la mappa</button><button aria-hidden="true" class="btn main v2LegacyHidden" id="v2AnaNew" type="button">＋ Nuovo albero</button></div></div>
+
 
 <div class="metricGrid">
 <div class="metric"><span>Schede</span><strong id="kAll">0</strong><small>Alberi nel database</small></div>
@@ -2753,7 +2753,7 @@ function v2ShowArchivePanel(panel=v2ArchivePanel){
 function v2RegisterUI(){
  const on=(id,fn)=>v2D(id).addEventListener('click',fn);
  // Replace older entry choices while preserving same menu names.
- on('v2AnaNew',()=>v2OpenAnag());on('v2AnaSelectMap',()=>switchSection('mappa'));
+ // The map is reached from its main navigation tab.
  on('v2AnagClose',()=>v2CloseAnag());on('v2AnaCancel',()=>v2CloseAnag());v2D('v2AnagForm').addEventListener('submit',v2SaveAnag);
  v2D('v2AnaCode').addEventListener('input',v2ClearCodeError);
  on('v2AnaAddPhotos',()=>v2D('v2AnaPhotoFiles').click());
@@ -3254,10 +3254,10 @@ if(mMobile){
 </section></div>
 
 <style>.adminRecord{padding:10px 0;border-bottom:1px solid #e4eae5;font-size:12px}.adminRecord small{display:block;color:#687d70;margin:5px 0}.adminRecord button{font-size:11px;padding:6px 10px}.adminTrashList,.adminAuditList{max-height:250px;overflow:auto}.adminTile textarea{min-height:65px}</style><script src="viewport-layout.js?v=1"></script>
-<script src="drive-storage.js?v=9"></script>
+<script src="drive-storage.js?v=10"></script>
 <script src="admin-ui.js?v=5"></script>
 <script src="user-guide.js?v=1"></script>
 <script src="vendor/qrcode.js?v=1"></script>
 
-<script src="municipal-ui.js?v=6"></script>
+<script src="municipal-ui.js?v=7"></script>
 </body></html>

@@ -100,12 +100,13 @@ def main():
                         page.locator(f'[data-mun-category="{category}"]').click()
                         button = page.locator("#driveRefreshRegistry")
                         assert button.is_visible() and button.is_enabled(), (width, category)
-                        assert button.inner_text() == "↻ Aggiorna database"
+                        assert button.inner_text() == "↻ Aggiorna"
+                        assert button.get_attribute("aria-label") == "Aggiorna database"
                         bounds = button.bounding_box()
-                        assert bounds["height"] >= 44 and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width, (width, category, bounds)
+                        assert bounds["height"] >= (44 if page.evaluate("mMobile") else 36) and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width, (width, category, bounds)
                         button.click()
                         page.wait_for_function("!document.getElementById('driveRefreshRegistry').disabled")
-                        assert page.locator("#driveRefreshStatus").is_visible(), (width, category)
+                        assert page.locator("#driveRefreshStatus").get_attribute("role") == "status"
                         assert page.locator("#driveRefreshStatus").inner_text().startswith("DB aggiornato")
                         assert page.locator("#driveAccess").is_hidden()
                         assert page.locator("#driveKey").input_value() == ""
@@ -215,6 +216,8 @@ def main():
             probe.wait_for_function("document.body.classList.contains('driveConnected')")
             assert probe.evaluate("trees[0].address") == "Via aggiornata dal primo utente"
             assert mobile.locator("#driveImport").is_disabled()
+            assert mobile.locator("#syncStatus.error").is_visible()
+            assert mobile.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             print("PASS: conflitto bloccato senza sovrascrivere il primo utente")
             mobile.evaluate("v2CloseAnag()"); open_archive(mobile)
             with mobile.expect_download() as recovery:
@@ -265,6 +268,8 @@ def main():
             probe.route(ENDPOINT, fail_read)
             probe.locator("#driveRefreshRegistry").click()
             probe.wait_for_function("document.getElementById('driveRefreshStatus').textContent.includes('Aggiornamento non riuscito')")
+            assert probe.locator("#driveRegistrySync").is_visible()
+            assert "registrySyncError" in probe.locator("#driveRegistrySync").get_attribute("class")
             assert probe.evaluate("JSON.stringify(trees)") == previous_trees
             assert probe.locator("#driveAccess").is_hidden()
             assert not probe.locator("#app").evaluate("e => e.inert")
